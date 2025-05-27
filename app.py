@@ -146,6 +146,10 @@ if submit:
     for col in modelo.feature_names_in_:
         if col not in datos:
             datos[col] = 0
+    print("Columnas esperadas por el modelo:")
+    print(modelo.feature_names_in_)
+    print("\nClaves del diccionario 'datos':")
+    print(list(datos.keys()))
 
     # Crear DataFrame con el orden exacto
     X = pd.DataFrame([datos])[modelo.feature_names_in_]
