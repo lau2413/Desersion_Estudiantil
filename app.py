@@ -18,8 +18,6 @@ def cargar_modelo():
     return joblib.load("mejor_modelo_desercion.pkl")
 
 modelo = cargar_modelo()
-print(modelo)
-print(modelo.steps)  
 
 st.title("🎓 Predicción de Deserción Estudiantil")
 st.markdown("Completa los datos del estudiante para predecir si existe riesgo de deserción.")
