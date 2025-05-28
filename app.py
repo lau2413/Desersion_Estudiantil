@@ -16,8 +16,8 @@ Complete el formulario con la información del estudiante para predecir el riesg
 @st.cache_resource
 def load_model():
     try:
-        pipeline = joblib.load('data/pipeline_final_desercion.pkl')
-        columnas = joblib.load('data/columnas_esperadas.pkl')
+        pipeline = joblib.load('pipeline_final_desercion.pkl')
+        columnas = joblib.load('columnas_esperadas.pkl')
         return pipeline, columnas
     except Exception as e:
         st.error(f"Error cargando el modelo: {str(e)}")
