@@ -17,7 +17,7 @@ Complete el formulario con la información del estudiante para predecir el riesg
 def load_model():
     try:
         # Intentar cargar el pipeline
-        pipeline = joblib.load('data/pipeline_final_desercion.pkl')
+        pipeline = joblib.load('pipeline_final_desercion.pkl')
         
         # Verificar que el pipeline esté entrenado
         if not hasattr(pipeline, 'classes_') and hasattr(pipeline, 'named_steps'):
@@ -28,14 +28,14 @@ def load_model():
                 return None, None
         
         # Cargar columnas esperadas
-        columnas = joblib.load('data/columnas_esperadas.pkl')
+        columnas = joblib.load('columnas_esperadas.pkl')
         
         st.success(f"Modelo cargado exitosamente. Tipo: {type(pipeline)}")
         return pipeline, columnas
         
     except FileNotFoundError as e:
         st.error(f"Archivo no encontrado: {str(e)}")
-        st.error("Asegúrate de que los archivos 'pipeline_final_desercion.pkl' y 'columnas_esperadas.pkl' estén en la carpeta 'data/'")
+        st.error("Asegúrate de que los archivos 'pipeline_final_desercion.pkl' y 'columnas_esperadas.pkl' estén en el directorio correcto.")
         return None, None
     except Exception as e:
         st.error(f"Error cargando el modelo: {str(e)}")
@@ -48,7 +48,7 @@ st.sidebar.markdown("### Estado del Sistema")
 pipeline, columnas_esperadas = load_model()
 
 if pipeline is None:
-    st.error("No se pudo cargar el modelo. Verifica los archivos en la carpeta 'data/'.")
+    st.error("No se pudo cargar el modelo. Verifica los archivos.")
     st.stop()
 else:
     st.sidebar.success("✅ Modelo cargado")
