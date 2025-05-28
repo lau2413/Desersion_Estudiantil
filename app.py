@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
+import traceback
 
 # Configuración de la página
 st.set_page_config(page_title="Predicción de Deserción Universitaria", layout="wide")
@@ -18,28 +19,12 @@ def load_model():
     try:
         # Intentar cargar el pipeline
         pipeline = joblib.load('pipeline_final_desercion.pkl')
-        
-        # Verificar que el pipeline esté entrenado
-        if not hasattr(pipeline, 'classes_') and hasattr(pipeline, 'named_steps'):
-            # Si es un pipeline, verificar el último paso
-            last_step = list(pipeline.named_steps.values())[-1]
-            if not hasattr(last_step, 'classes_'):
-                st.error("El modelo no está entrenado correctamente.")
-                return None, None
-        
-        # Cargar columnas esperadas
         columnas = joblib.load('columnas_esperadas.pkl')
-        
-        st.success(f"Modelo cargado exitosamente. Tipo: {type(pipeline)}")
         return pipeline, columnas
-        
-    except FileNotFoundError as e:
-        st.error(f"Archivo no encontrado: {str(e)}")
-        st.error("Asegúrate de que los archivos 'pipeline_final_desercion.pkl' y 'columnas_esperadas.pkl' estén en el directorio correcto.")
-        return None, None
+               
     except Exception as e:
-        st.error(f"Error cargando el modelo: {str(e)}")
-        st.error(f"Tipo de error: {type(e).__name__}")
+        st.error("Error al cargar el modelo:")
+        st.error(traceback.format_exc())
         return None, None
 
 # Mostrar información de depuración
