@@ -1,334 +1,304 @@
 import streamlit as st
 import pandas as pd
-import joblib
 import numpy as np
+import joblib
+import traceback
 
-# Configuración de la página
-st.set_page_config(page_title="Predicción de Deserción Universitaria", layout="wide")
-
-# Título de la aplicación
-st.title("Sistema de Predicción de Deserción Universitaria")
-st.markdown("""
-Complete el formulario con la información del estudiante para predecir el riesgo de deserción.
-""")
-
-# Cargar el modelo y las columnas esperadas
+# Función para cargar el modelo
 @st.cache_resource
 def load_model():
     try:
-        pipeline = joblib.load('pipeline_final_desercion.pkl')
-        columnas = joblib.load('columnas_esperadas.pkl')
-        return pipeline, columnas
+        # Cargar el pipeline completo (ya incluye preprocesador y modelo)
+        model = joblib.load('pipeline_final_desercion.pkl')
+        
+        # Cargar las columnas esperadas
+        try:
+            columnas_esperadas = joblib.load('columnas_esperadas.pkl')
+        except FileNotFoundError:
+            # Si no existe el archivo, usar las columnas del error que mostraste
+            columnas_esperadas = [
+                "Application order","Daytime/evening attendance","Previous qualification (grade)",
+                "Admission grade","Displaced","Debtor","Tuition fees up to date","Gender",
+                "Scholarship holder","Age at enrollment","Curricular units 1st sem (evaluations)",
+                "Curricular units 1st sem (without evaluations)","Curricular units 2nd sem (credited)",
+                "Curricular units 2nd sem (enrolled)","Curricular units 2nd sem (evaluations)",
+                "Curricular units 2nd sem (approved)","Curricular units 2nd sem (grade)",
+                "Curricular units 2nd sem (without evaluations)","Unemployment rate",
+                "Inflation rate","GDP","Marital status_Divorced","Marital status_FactoUnion",
+                "Marital status_Separated","Marital status_Single","Application mode_Admisión Especial",
+                "Application mode_Admisión Regular","Application mode_Admisión por Ordenanza",
+                "Application mode_Cambios/Transferencias","Application mode_Estudiantes Internacionales",
+                "Application mode_Mayores de 23 años","Course_Agricultural & Environmental Sciences",
+                "Course_Arts & Design","Course_Business & Management","Course_Communication & Media",
+                "Course_Education","Course_Engineering & Technology","Course_Health Sciences",
+                "Course_Social Sciences","Previous qualification_Higher Education",
+                "Previous qualification_Other","Previous qualification_Secondary Education",
+                "Previous qualification_Technical Education","Nacionality_Colombian",
+                "Nacionality_Cuban","Nacionality_Dutch","Nacionality_English","Nacionality_German",
+                "Nacionality_Italian","Nacionality_Lithuanian","Nacionality_Moldovan",
+                "Nacionality_Mozambican","Nacionality_Portuguese","Nacionality_Romanian",
+                "Nacionality_Santomean","Nacionality_Turkish","Mother's qualification_Basic_or_Secondary",
+                "Mother's qualification_Other_or_Unknown","Mother's qualification_Postgraduate",
+                "Mother's qualification_Technical_Education","Father's qualification_Basic_or_Secondary",
+                "Father's qualification_Other_or_Unknown","Father's qualification_Postgraduate",
+                "Mother's occupation_Administrative/Clerical","Mother's occupation_Skilled Manual Workers",
+                "Mother's occupation_Special Cases","Mother's occupation_Technicians/Associate Professionals",
+                "Mother's occupation_Unskilled Workers","Father's occupation_Administrative/Clerical",
+                "Father's occupation_Professionals","Father's occupation_Skilled Manual Workers",
+                "Father's occupation_Special Cases","Father's occupation_Technicians/Associate Professionals"
+            ]
+            
+        return model, columnas_esperadas
     except Exception as e:
-        st.error(f"Error cargando el modelo: {str(e)}")
+        st.error(f"Error cargando modelo: {e}")
         return None, None
 
-pipeline, columnas_esperadas = load_model()
-
-if pipeline is None:
-    st.stop()
-
-# Crear formulario para la entrada de datos
-with st.form("student_form"):
-    # Dividir el formulario en pestañas para mejor organización
-    tab1, tab2, tab3, tab4 = st.tabs(["Información Personal", "Datos Académicos", "Información Económica", "Historial Familiar"])
-    
-    with tab1:
-        st.subheader("Información Personal")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            age = st.number_input("Edad al matricularse", min_value=17, max_value=70, value=20)
-            gender = st.radio("Género", options=[1, 0], format_func=lambda x: "Masculino" if x == 1 else "Femenino")
-            marital_status = st.radio("Estado civil", 
-                                     options=["Single", "Divorced", "FactoUnion", "Separated"],
-                                     horizontal=True)
-            
-        with col2:
-            displaced = st.checkbox("Desplazado", value=False)
-            debtor = st.checkbox("Deudor", value=False)
-            tuition_up_to_date = st.checkbox("Matrícula al día", value=True)
-            scholarship = st.checkbox("Becado", value=False)
-    
-    with tab2:
-        st.subheader("Datos Académicos")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            application_order = st.slider("Orden de aplicación", 0, 9, 1)
-            daytime_attendance = st.radio("Asistencia", options=[1, 0], 
-                                        format_func=lambda x: "Diurna" if x == 1 else "Nocturna",
-                                        horizontal=True)
-            
-            prev_qualification_grade = st.number_input("Nota de titulación previa", min_value=0.0, max_value=200.0, value=120.0)
-            
-            prev_qualification = st.selectbox("Tipo de titulación previa", options=[
-                "Secondary Education", "Higher Education", "Technical Education", "Other"
-            ])
-            
-            admission_grade = st.number_input("Nota de admisión", min_value=0.0, max_value=200.0, value=120.0)
-            
-        with col2:
-            application_mode = st.selectbox("Modo de aplicación", options=[
-                "Admisión Regular", "Admisión Especial", 
-                "Admisión por Ordenanza", "Cambios/Transferencias",
-                "Estudiantes Internacionales", "Mayores de 23 años"
-            ])
-            
-            course = st.selectbox("Curso", options=[
-                "Agricultural & Environmental Sciences", "Arts & Design",
-                "Business & Management", "Communication & Media",
-                "Education", "Engineering & Technology",
-                "Health Sciences", "Social Sciences"
-            ])
-            
-            # Primer semestre
-            st.markdown("**Primer Semestre**")
-            col2a, col2b = st.columns(2)
-            with col2a:
-                units_1sem_eval = st.number_input("Unidades evaluadas (1er sem)", min_value=0, max_value=45, value=5)
-            with col2b:
-                units_1sem_noeval = st.number_input("Unidades no evaluadas (1er sem)", min_value=0, max_value=12, value=0)
-            
-            # Segundo semestre
-            st.markdown("**Segundo Semestre**")
-            col2c, col2d = st.columns(2)
-            with col2c:
-                units_2sem_credited = st.number_input("Unidades con crédito (2do sem)", min_value=0, max_value=19, value=0)
-                units_2sem_enrolled = st.number_input("Unidades matriculadas (2do sem)", min_value=0, max_value=23, value=6)
-                units_2sem_eval = st.number_input("Unidades evaluadas (2do sem)", min_value=0, max_value=33, value=6)
-            with col2d:
-                units_2sem_approved = st.number_input("Unidades aprobadas (2do sem)", min_value=0, max_value=20, value=4)
-                units_2sem_grade = st.number_input("Nota media (2do sem)", min_value=0.0, max_value=18.57, value=12.0)
-                units_2sem_noeval = st.number_input("Unidades no evaluadas (2do sem)", min_value=0, max_value=12, value=0)
-    
-    with tab3:
-        st.subheader("Información Económica")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            unemployment = st.slider("Tasa de desempleo (%)", min_value=7.6, max_value=16.2, value=10.0)
-            inflation = st.slider("Tasa de inflación (%)", min_value=-0.8, max_value=3.7, value=1.5)
-        
-        with col2:
-            gdp = st.slider("GDP", min_value=-4.06, max_value=3.51, value=0.0)
-    
-    with tab4:
-        st.subheader("Historial Familiar")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Madre**")
-            mother_qualification = st.radio("Titulación de la madre", 
-                                          options=["Basic_or_Secondary", "Other_or_Unknown", 
-                                                  "Postgraduate", "Technical_Education"],
-                                          horizontal=True)
-            
-            mother_occupation = st.selectbox("Ocupación de la madre", options=[
-                "Administrative/Clerical", "Skilled Manual Workers",
-                "Special Cases", "Technicians/Associate Professionals",
-                "Unskilled Workers"
-            ])
-        
-        with col2:
-            st.markdown("**Padre**")
-            father_qualification = st.radio("Titulación del padre", 
-                                          options=["Basic_or_Secondary", "Other_or_Unknown", 
-                                                  "Postgraduate"],
-                                          horizontal=True)
-            
-            father_occupation = st.selectbox("Ocupación del padre", options=[
-                "Administrative/Clerical", "Professionals",
-                "Skilled Manual Workers", "Special Cases",
-                "Technicians/Associate Professionals"
-            ])
-    
-        # Nacionalidad
-        nationality = st.selectbox("Nacionalidad", options=[
-            "Colombian", "Cuban", "Dutch", "English", "German",
-            "Italian", "Lithuanian", "Moldovan", "Mozambican",
-            "Portuguese", "Romanian", "Santomean", "Turkish"
-        ])
-    
-    submitted = st.form_submit_button("Predecir Riesgo de Deserción")
-
-# Cuando se envía el formulario
-if submitted:
-    # Crear un diccionario con todas las columnas esperadas inicializadas a 0
-    input_data = {col: 0 for col in columnas_esperadas}
-    
-    # Actualizar los valores numéricos directos
-    input_data.update({
-        # Información personal
-        'Age at enrollment': age,
-        'Gender': gender,
-        'Displaced': int(displaced),
-        'Debtor': int(debtor),
-        'Tuition fees up to date': int(tuition_up_to_date),
-        'Scholarship holder': int(scholarship),
-        
-        # Datos académicos
-        'Application order': application_order,
-        'Daytime/evening attendance': daytime_attendance,
-        'Previous qualification (grade)': prev_qualification_grade,
-        'Admission grade': admission_grade,
-        
-        # Primer semestre
-        'Curricular units 1st sem (evaluations)': units_1sem_eval,
-        'Curricular units 1st sem (without evaluations)': units_1sem_noeval,
-        
-        # Segundo semestre
-        'Curricular units 2nd sem (credited)': units_2sem_credited,
-        'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,
-        'Curricular units 2nd sem (evaluations)': units_2sem_eval,
-        'Curricular units 2nd sem (approved)': units_2sem_approved,
-        'Curricular units 2nd sem (grade)': units_2sem_grade,
-        'Curricular units 2nd sem (without evaluations)': units_2sem_noeval,
-        
-        # Información económica
-        'Unemployment rate': unemployment,
-        'Inflation rate': inflation,
-        'GDP': gdp,
-    })
-    
-    # Activar variables categóricas usando los nombres exactos del modelo
-    # Estado civil
-    marital_col = f'Marital status_{marital_status}'
-    if marital_col in columnas_esperadas:
-        input_data[marital_col] = 1
-    
-    # Modo de aplicación - usar nombres exactos del modelo
-    app_mode_map = {
-        "Admisión Regular": "Admisión Regular",
-        "Admisión Especial": "Admisión Especial", 
-        "Admisión por Ordenanza": "Admisión por Ordenanza",
-        "Cambios/Transferencias": "Cambios/Transferencias",
-        "Estudiantes Internacionales": "Estudiantes Internacionales",
-        "Mayores de 23 años": "Mayores de 23 años"
-    }
-    app_mode_col = f'Application mode_{app_mode_map[application_mode]}'
-    if app_mode_col in columnas_esperadas:
-        input_data[app_mode_col] = 1
-    
-    # Curso
-    course_col = f'Course_{course}'
-    if course_col in columnas_esperadas:
-        input_data[course_col] = 1
-    
-    # Titulación previa
-    prev_qual_col = f'Previous qualification_{prev_qualification}'
-    if prev_qual_col in columnas_esperadas:
-        input_data[prev_qual_col] = 1
-    
-    # Nacionalidad
-    nationality_col = f'Nacionality_{nationality}'
-    if nationality_col in columnas_esperadas:
-        input_data[nationality_col] = 1
-    
-    # Titulación de la madre
-    mother_qual_col = f"Mother's qualification_{mother_qualification}"
-    if mother_qual_col in columnas_esperadas:
-        input_data[mother_qual_col] = 1
-    
-    # Ocupación de la madre - corregir nombres con espacios
-    mother_occ_formatted = mother_occupation.replace(" ", "_").replace("/", "/")
-    mother_occ_col = f"Mother's occupation_{mother_occ_formatted}"
-    if mother_occ_col in columnas_esperadas:
-        input_data[mother_occ_col] = 1
-    
-    # Titulación del padre
-    father_qual_col = f"Father's qualification_{father_qualification}"
-    if father_qual_col in columnas_esperadas:
-        input_data[father_qual_col] = 1
-    
-    # Ocupación del padre - corregir nombres con espacios
-    father_occ_formatted = father_occupation.replace(" ", "_").replace("/", "/")
-    father_occ_col = f"Father's occupation_{father_occ_formatted}"
-    if father_occ_col in columnas_esperadas:
-        input_data[father_occ_col] = 1
-    
-    # Convertir a DataFrame manteniendo el orden exacto de las columnas esperadas
-    input_df = pd.DataFrame([input_data])[columnas_esperadas]
-    
-    # Hacer la predicción
+# Función para preparar los datos
+def prepare_data(input_data, columnas_esperadas):
+    """
+    Prepara los datos de entrada para la predicción
+    El pipeline ya incluye el preprocesador, solo necesitamos formatear correctamente
+    """
     try:
-        prediction_proba = pipeline.predict_proba(input_df)[0][1]  # Probabilidad de deserción
-        prediction_percent = round(prediction_proba * 100, 2)
-        
-        # Mostrar resultados
-        st.subheader("Resultado de la Predicción")
-        
-        # Barra de progreso y métrica
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Probabilidad de Deserción", f"{prediction_percent}%")
-        with col2:
-            st.progress(prediction_proba)
-        
-        # Interpretación
-        if prediction_proba > 0.7:
-            st.error("🚨 Alto riesgo de deserción. Se recomienda intervención inmediata.")
-        elif prediction_proba > 0.4:
-            st.warning("⚠️ Riesgo moderado de deserción. Se sugiere monitoreo cercano.")
+        # Convertir a DataFrame si es necesario
+        if isinstance(input_data, dict):
+            df = pd.DataFrame([input_data])
+        elif isinstance(input_data, pd.DataFrame):
+            df = input_data.copy()
         else:
-            st.success("✅ Bajo riesgo de deserción.")
+            st.error("Formato de datos no válido")
+            return None
         
-        # Mostrar información adicional
-        with st.expander("Ver detalles de la predicción"):
-            st.write("**Factores de riesgo identificados:**")
-            
-            risk_factors = []
-            if prediction_proba > 0.5:
-                if units_2sem_grade < 10:
-                    risk_factors.append("- Nota promedio baja en segundo semestre")
-                if units_2sem_approved < units_2sem_eval * 0.7:
-                    risk_factors.append("- Baja tasa de aprobación en segundo semestre")
-                if not tuition_up_to_date:
-                    risk_factors.append("- Matrícula no está al día")
-                if debtor:
-                    risk_factors.append("- Estudiante con deudas")
-                if unemployment > 12:
-                    risk_factors.append("- Alta tasa de desempleo en el contexto")
-            
-            if risk_factors:
-                for factor in risk_factors:
-                    st.write(factor)
-            else:
-                st.write("No se identificaron factores de riesgo significativos.")
+        # Asegurar que todas las columnas esperadas estén presentes
+        for col in columnas_esperadas:
+            if col not in df.columns:
+                df[col] = 0  # Valor por defecto para columnas faltantes
         
-        # Mostrar los datos técnicos (opcional)
-        with st.expander("Ver datos técnicos enviados al modelo"):
-            # Mostrar solo las columnas con valores no cero para mayor claridad
-            non_zero_data = {k: v for k, v in input_data.items() if v != 0}
-            st.json(non_zero_data)
+        # Reordenar columnas para que coincidan con el orden esperado
+        df = df[columnas_esperadas]
+        
+        # Definir tipos de datos según tu documento
+        variables_int = [
+            'Application order', 'Daytime/evening attendance', 'Displaced',
+            'Debtor', 'Tuition fees up to date', 'Gender', 'Scholarship holder',
+            'Age at enrollment', 'Curricular units 1st sem (evaluations)',
+            'Curricular units 1st sem (without evaluations)', 'Curricular units 2nd sem (credited)',
+            'Curricular units 2nd sem (enrolled)', 'Curricular units 2nd sem (evaluations)',
+            'Curricular units 2nd sem (approved)', 'Curricular units 2nd sem (without evaluations)'
+        ]
+        
+        variables_float = [
+            'Previous qualification (grade)', 'Admission grade', 'Curricular units 2nd sem (grade)',
+            'Unemployment rate', 'Inflation rate', 'GDP'
+        ]
+        
+        # Convertir tipos de datos
+        for col in variables_int:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+        
+        for col in variables_float:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0).astype(float)
+        
+        # Las variables booleanas (dummies) deben ser 0 o 1
+        variables_bool = [col for col in columnas_esperadas if col not in variables_int + variables_float]
+        for col in variables_bool:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+                # Asegurar que sea 0 o 1
+                df[col] = df[col].clip(0, 1)
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Error preparando datos: {e}")
+        st.error(f"Traceback: {traceback.format_exc()}")
+        return None
+
+# Función principal de predicción
+def make_prediction(input_data):
+    """
+    Realiza la predicción usando el pipeline completo
+    """
+    try:
+        # Cargar modelo y columnas esperadas
+        model, columnas_esperadas = load_model()
+        if model is None:
+            return None
+        
+        # Preparar datos
+        df_prepared = prepare_data(input_data, columnas_esperadas)
+        if df_prepared is None:
+            return None
+        
+        st.write("Datos preparados exitosamente:")
+        st.write(f"Shape: {df_prepared.shape}")
+        st.write("Primeras columnas:", df_prepared.columns[:10].tolist())
+        
+        # Realizar predicción directamente con el pipeline
+        # El pipeline ya incluye el preprocesador, no necesitamos aplicar scaling adicional
+        prediction = model.predict(df_prepared)
+        
+        # Obtener probabilidades si es posible
+        try:
+            probabilities = model.predict_proba(df_prepared)
+            return {
+                'prediction': prediction[0],
+                'probabilities': probabilities[0],
+                'prediction_label': 'Deserción' if prediction[0] == 1 else 'No Deserción'
+            }
+        except Exception as prob_error:
+            st.warning(f"No se pudieron obtener probabilidades: {prob_error}")
+            return {
+                'prediction': prediction[0],
+                'probabilities': None,
+                'prediction_label': 'Deserción' if prediction[0] == 1 else 'No Deserción'
+            }
             
     except Exception as e:
-        st.error(f"Error al hacer la predicción: {str(e)}")
-        st.write("Columnas esperadas por el modelo:")
-        st.write(columnas_esperadas)
-        st.write("Columnas enviadas:")
-        st.write(list(input_df.columns))
+        st.error(f"Error en predicción: {e}")
+        st.error(f"Traceback: {traceback.format_exc()}")
+        return None
 
-# Información adicional en el sidebar
-st.sidebar.markdown("""
-### Instrucciones:
-1. Complete todas las pestañas del formulario.
-2. Revise que los datos sean correctos.
-3. Haga clic en **Predecir Riesgo de Deserción**.
-4. Interprete los resultados según el nivel de riesgo.
+# Función para crear datos de ejemplo
+def create_sample_data():
+    """
+    Crea un ejemplo de datos para testing
+    """
+    sample = {
+        "Application order": 1,
+        "Daytime/evening attendance": 1,
+        "Previous qualification (grade)": 15.0,
+        "Admission grade": 16.5,
+        "Displaced": 0,
+        "Debtor": 0,
+        "Tuition fees up to date": 1,
+        "Gender": 1,
+        "Scholarship holder": 0,
+        "Age at enrollment": 20,
+        "Curricular units 1st sem (evaluations)": 6,
+        "Curricular units 1st sem (without evaluations)": 0,
+        "Curricular units 2nd sem (credited)": 0,
+        "Curricular units 2nd sem (enrolled)": 6,
+        "Curricular units 2nd sem (evaluations)": 6,
+        "Curricular units 2nd sem (approved)": 6,
+        "Curricular units 2nd sem (grade)": 14.2,
+        "Curricular units 2nd sem (without evaluations)": 0,
+        "Unemployment rate": 10.8,
+        "Inflation rate": 1.4,
+        "GDP": 1.74,
+        # Marital status (solo uno debe ser 1)
+        "Marital status_Divorced": 0,
+        "Marital status_FactoUnion": 0,
+        "Marital status_Separated": 0,
+        "Marital status_Single": 1,
+        # Application mode (solo uno debe ser 1)
+        "Application mode_Admisión Especial": 0,
+        "Application mode_Admisión Regular": 1,
+        "Application mode_Admisión por Ordenanza": 0,
+        "Application mode_Cambios/Transferencias": 0,
+        "Application mode_Estudiantes Internacionales": 0,
+        "Application mode_Mayores de 23 años": 0,
+        # Course (solo uno debe ser 1)
+        "Course_Agricultural & Environmental Sciences": 0,
+        "Course_Arts & Design": 0,
+        "Course_Business & Management": 1,
+        "Course_Communication & Media": 0,
+        "Course_Education": 0,
+        "Course_Engineering & Technology": 0,
+        "Course_Health Sciences": 0,
+        "Course_Social Sciences": 0,
+        # Previous qualification (solo uno debe ser 1)
+        "Previous qualification_Higher Education": 0,
+        "Previous qualification_Other": 0,
+        "Previous qualification_Secondary Education": 1,
+        "Previous qualification_Technical Education": 0,
+        # Nationality (solo uno debe ser 1)
+        "Nacionality_Colombian": 1,
+        "Nacionality_Cuban": 0,
+        "Nacionality_Dutch": 0,
+        "Nacionality_English": 0,
+        "Nacionality_German": 0,
+        "Nacionality_Italian": 0,
+        "Nacionality_Lithuanian": 0,
+        "Nacionality_Moldovan": 0,
+        "Nacionality_Mozambican": 0,
+        "Nacionality_Portuguese": 0,
+        "Nacionality_Romanian": 0,
+        "Nacionality_Santomean": 0,
+        "Nacionality_Turkish": 0,
+        # Mother's qualification
+        "Mother's qualification_Basic_or_Secondary": 1,
+        "Mother's qualification_Other_or_Unknown": 0,
+        "Mother's qualification_Postgraduate": 0,
+        "Mother's qualification_Technical_Education": 0,
+        # Father's qualification
+        "Father's qualification_Basic_or_Secondary": 1,
+        "Father's qualification_Other_or_Unknown": 0,
+        "Father's qualification_Postgraduate": 0,
+        # Mother's occupation
+        "Mother's occupation_Administrative/Clerical": 0,
+        "Mother's occupation_Skilled Manual Workers": 1,
+        "Mother's occupation_Special Cases": 0,
+        "Mother's occupation_Technicians/Associate Professionals": 0,
+        "Mother's occupation_Unskilled Workers": 0,
+        # Father's occupation
+        "Father's occupation_Administrative/Clerical": 0,
+        "Father's occupation_Professionals": 0,
+        "Father's occupation_Skilled Manual Workers": 1,
+        "Father's occupation_Special Cases": 0,
+        "Father's occupation_Technicians/Associate Professionals": 0
+    }
+    
+    return sample
 
-### Notas:
-- Los campos booleanos se convierten automáticamente (0=False, 1=True)
-- Para variables categóricas, seleccione solo una opción
-- El modelo fue entrenado con datos balanceados usando SMOTE
-- Utiliza un pipeline con XGBoost optimizado mediante búsqueda bayesiana
+# Ejemplo de uso en Streamlit
+def main():
+    st.title("🎓 Predictor de Deserción Académica")
+    st.write("Sistema de predicción basado en XGBoost optimizado")
+    
+    # Botón para probar con datos de ejemplo
+    if st.button("🧪 Probar con datos de ejemplo"):
+        sample_data = create_sample_data()
+        
+        with st.spinner("Realizando predicción..."):
+            resultado = make_prediction(sample_data)
+        
+        if resultado:
+            st.success("✅ Predicción realizada exitosamente!")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric("Predicción", resultado['prediction_label'])
+                st.metric("Valor numérico", resultado['prediction'])
+            
+            with col2:
+                if resultado['probabilities'] is not None:
+                    prob_no_desercion = resultado['probabilities'][0] * 100
+                    prob_desercion = resultado['probabilities'][1] * 100
+                    
+                    st.metric("Prob. No Deserción", f"{prob_no_desercion:.1f}%")
+                    st.metric("Prob. Deserción", f"{prob_desercion:.1f}%")
+            
+            # Mostrar interpretación
+            st.subheader("📊 Interpretación")
+            if resultado['prediction'] == 1:
+                st.warning("⚠️ **Alto riesgo de deserción**: Se recomienda intervención temprana")
+            else:
+                st.success("✅ **Bajo riesgo de deserción**: El estudiante tiene buenas perspectivas de continuidad")
+        else:
+            st.error("❌ Error en la predicción")
+    
+    # Información sobre el modelo
+    st.subheader("ℹ️ Información del Modelo")
+    st.info("""
+    - **Modelo**: XGBoost optimizado con Optimización Bayesiana
+    - **Métricas**: F1-score optimizado para balancear precisión y recall
+    - **Preprocesamiento**: MinMaxScaler aplicado a variables numéricas
+    - **Variables**: 69 características incluyendo datos académicos, socioeconómicos y demográficos
+    """)
 
-### Métricas del modelo:
-- F1-Score: ~0.91
-- Validación cruzada de 10 pliegues
-- Optimización de hiperparámetros con BayesSearchCV
-""")
-
-# Footer
-st.markdown("---")
-st.markdown("*Sistema desarrollado para predecir la deserción universitaria usando técnicas de Machine Learning*")
+if __name__ == "__main__":
+    main()
