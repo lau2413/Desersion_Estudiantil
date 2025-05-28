@@ -16,8 +16,8 @@ Complete el formulario con la información del estudiante para predecir el riesg
 @st.cache_resource
 def load_model():
     try:
-        pipeline = joblib.load('pipeline_final_desercion.pkl')
-        columnas = joblib.load('columnas_esperadas.pkl')
+        pipeline = joblib.load('data/pipeline_final_desercion.pkl')
+        columnas = joblib.load('data/columnas_esperadas.pkl')
         return pipeline, columnas
     except Exception as e:
         st.error(f"Error cargando el modelo: {str(e)}")
@@ -158,133 +158,154 @@ with st.form("student_form"):
     
     submitted = st.form_submit_button("Predecir Riesgo de Deserción")
 
+# Función para crear el input correcto
+def create_input_data():
+    # Crear un diccionario con todas las columnas esperadas inicializadas a 0
+    input_data = {col: 0 for col in columnas_esperadas}
+    
+    # Mapeo de titulaciones previas a códigos numéricos
+    prev_qualification_map = {
+        "Secondary education": 1,
+        "Higher education - bachelor's degree": 2,
+        "Higher education - degree": 3,
+        "Higher education - master's": 4,
+        "Higher education - doctorate": 5,
+        "Frequency of higher education": 6,
+        "12th year of schooling - not completed": 9,
+        "11th year of schooling - not completed": 10,
+        "Other - 11th year of schooling": 12,
+        "10th year of schooling": 14,
+        "10th year of schooling - not completed": 15,
+        "Basic education 3rd cycle": 19,
+        "Basic education 2nd cycle": 38,
+        "Technological specialization course": 39,
+        "Higher education - degree (1st cycle)": 40,
+        "Professional higher technical course": 42,
+        "Higher education - master (2nd cycle)": 43
+    }
+    
+    # Actualizar los valores básicos
+    input_data.update({
+        # Información personal
+        'Age at enrollment': age,
+        'Gender': gender,
+        'Displaced': int(displaced),
+        'Debtor': int(debtor),
+        'Tuition fees up to date': int(tuition_up_to_date),
+        'Scholarship holder': int(scholarship),
+        
+        # Datos académicos
+        'Application order': application_order,
+        'Daytime/evening attendance': daytime_attendance,
+        'Previous qualification (grade)': prev_qualification_map.get(prev_qualification, 1),
+        'Admission grade': admission_grade,
+        
+        # Primer semestre
+        'Curricular units 1st sem (evaluations)': units_1sem_eval,
+        'Curricular units 1st sem (without evaluations)': units_1sem_noeval,
+        
+        # Segundo semestre
+        'Curricular units 2nd sem (credited)': units_2sem_credited,
+        'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,
+        'Curricular units 2nd sem (evaluations)': units_2sem_eval,
+        'Curricular units 2nd sem (approved)': units_2sem_approved,
+        'Curricular units 2nd sem (grade)': units_2sem_grade,
+        'Curricular units 2nd sem (without evaluations)': units_2sem_noeval,
+        
+        # Información económica
+        'Unemployment rate': unemployment,
+        'Inflation rate': inflation,
+        'GDP': gdp,
+    })
+    
+    # Variables categóricas - Estado civil
+    marital_status_cols = [f'Marital status_{status}' for status in ["Single", "Divorced", "FactoUnion", "Separated"]]
+    for col in marital_status_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f'Marital status_{marital_status}' else 0
+    
+    # Variables categóricas - Modo de aplicación
+    application_mode_map = {
+        "Admisión Regular": "Admisión Regular",
+        "Admisión Especial": "Admisión Especial",
+        "Admisión por Ordenanza": "Admisión por Ordenanza",
+        "Cambios/Transferencias": "Cambios/Transferencias",
+        "Estudiantes Internacionales": "Estudiantes Internacionales",
+        "Mayores de 23 años": "Mayores de 23 años"
+    }
+    
+    for mode in application_mode_map.values():
+        col_name = f'Application mode_{mode}'
+        if col_name in columnas_esperadas:
+            input_data[col_name] = 1 if mode == application_mode else 0
+    
+    # Variables categóricas - Curso
+    course_cols = [f'Course_{c}' for c in ["Agricultural & Environmental Sciences", "Arts & Design",
+                                           "Business & Management", "Communication & Media",
+                                           "Education", "Engineering & Technology",
+                                           "Health Sciences", "Social Sciences"]]
+    for col in course_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f'Course_{course}' else 0
+    
+    # Variables categóricas - Titulación de la madre
+    mother_qual_cols = [f"Mother's qualification_{qual}" for qual in ["Basic_or_Secondary", "Other_or_Unknown", 
+                                                                     "Postgraduate", "Technical_Education"]]
+    for col in mother_qual_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f"Mother's qualification_{mother_qualification}" else 0
+    
+    # Variables categóricas - Ocupación de la madre
+    mother_occ_cols = [f"Mother's occupation_{occ.replace(' ', '_')}" for occ in [
+        "Administrative/Clerical", "Skilled Manual Workers", "Special Cases", 
+        "Technicians/Associate Professionals", "Unskilled Workers"]]
+    for col in mother_occ_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f"Mother's occupation_{mother_occupation.replace(' ', '_')}" else 0
+    
+    # Variables categóricas - Titulación del padre
+    father_qual_cols = [f"Father's qualification_{qual}" for qual in ["Basic_or_Secondary", "Other_or_Unknown", "Postgraduate"]]
+    for col in father_qual_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f"Father's qualification_{father_qualification}" else 0
+    
+    # Variables categóricas - Ocupación del padre
+    father_occ_cols = [f"Father's occupation_{occ.replace(' ', '_')}" for occ in [
+        "Administrative/Clerical", "Professionals", "Skilled Manual Workers", 
+        "Special Cases", "Technicians/Associate Professionals"]]
+    for col in father_occ_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f"Father's occupation_{father_occupation.replace(' ', '_')}" else 0
+    
+    # Variables categóricas - Nacionalidad
+    nationality_cols = [f'Nacionality_{nat}' for nat in ["Colombian", "Cuban", "Dutch", "English", "German",
+                                                        "Italian", "Lithuanian", "Moldovan", "Mozambican",
+                                                        "Portuguese", "Romanian", "Santomean", "Turkish"]]
+    for col in nationality_cols:
+        if col in columnas_esperadas:
+            input_data[col] = 1 if col == f'Nacionality_{nationality}' else 0
+    
+    return input_data
+
 # Cuando se envía el formulario
 if submitted:
     try:
-        # Crear un diccionario con todas las columnas esperadas inicializadas a 0
-        input_data = {col: 0 for col in columnas_esperadas}
-        
-        # Mapeo de titulaciones previas a códigos numéricos
-        prev_qualification_map = {
-            "Secondary education": 1,
-            "Higher education - bachelor's degree": 2,
-            "Higher education - degree": 3,
-            "Higher education - master's": 4,
-            "Higher education - doctorate": 5,
-            "Frequency of higher education": 6,
-            "12th year of schooling - not completed": 9,
-            "11th year of schooling - not completed": 10,
-            "Other - 11th year of schooling": 12,
-            "10th year of schooling": 14,
-            "10th year of schooling - not completed": 15,
-            "Basic education 3rd cycle": 19,
-            "Basic education 2nd cycle": 38,
-            "Technological specialization course": 39,
-            "Higher education - degree (1st cycle)": 40,
-            "Professional higher technical course": 42,
-            "Higher education - master (2nd cycle)": 43
-        }
-        
-        # Actualizar los valores ingresados - CORREGIDO: usar nombres exactos de columnas
-        input_data.update({
-            # Información personal
-            'Age at enrollment': age,
-            'Gender': gender,
-            'Displaced': int(displaced),
-            'Debtor': int(debtor),
-            'Tuition fees up to date': int(tuition_up_to_date),
-            'Scholarship holder': int(scholarship),
-            
-            # Datos académicos
-            'Application order': application_order,
-            'Daytime/evening attendance': daytime_attendance,
-            'Previous qualification (grade)': prev_qualification_map[prev_qualification],
-            'Admission grade': admission_grade,
-            
-            # Primer semestre
-            'Curricular units 1st sem (evaluations)': units_1sem_eval,
-            'Curricular units 1st sem (without evaluations)': units_1sem_noeval,
-            
-            # Segundo semestre
-            'Curricular units 2nd sem (credited)': units_2sem_credited,
-            'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,
-            'Curricular units 2nd sem (evaluations)': units_2sem_eval,
-            'Curricular units 2nd sem (approved)': units_2sem_approved,
-            'Curricular units 2nd sem (grade)': units_2sem_grade,
-            'Curricular units 2nd sem (without evaluations)': units_2sem_noeval,
-            
-            # Información económica
-            'Unemployment rate': unemployment,
-            'Inflation rate': inflation,
-            'GDP': gdp,
-        })
-        
-        # Variables categóricas - usar nombres exactos de las columnas del modelo
-        # Estado civil
-        marital_status_cols = [col for col in columnas_esperadas if col.startswith('Marital status_')]
-        for col in marital_status_cols:
-            if f'Marital status_{marital_status}' == col:
-                input_data[col] = 1
-        
-        # Modo de aplicación  
-        application_mode_cols = [col for col in columnas_esperadas if col.startswith('Application mode_')]
-        for col in application_mode_cols:
-            if application_mode.replace(" ", "_") in col or application_mode.replace("/", "_") in col:
-                input_data[col] = 1
-                break
-        
-        # Curso
-        course_cols = [col for col in columnas_esperadas if col.startswith('Course_')]
-        for col in course_cols:
-            if course in col:
-                input_data[col] = 1
-                break
-        
-        # Nacionalidad
-        nationality_cols = [col for col in columnas_esperadas if col.startswith('Nacionality_')]
-        for col in nationality_cols:
-            if nationality in col:
-                input_data[col] = 1
-                break
-        
-        # Calificación de madre
-        mother_qual_cols = [col for col in columnas_esperadas if col.startswith("Mother's qualification_")]
-        for col in mother_qual_cols:
-            if mother_qualification in col:
-                input_data[col] = 1
-                break
-        
-        # Ocupación de madre
-        mother_occ_cols = [col for col in columnas_esperadas if col.startswith("Mother's occupation_")]
-        for col in mother_occ_cols:
-            if mother_occupation.replace(" ", "_").replace("/", "_") in col:
-                input_data[col] = 1
-                break
-        
-        # Calificación de padre
-        father_qual_cols = [col for col in columnas_esperadas if col.startswith("Father's qualification_")]
-        for col in father_qual_cols:
-            if father_qualification in col:
-                input_data[col] = 1
-                break
-        
-        # Ocupación de padre
-        father_occ_cols = [col for col in columnas_esperadas if col.startswith("Father's occupation_")]
-        for col in father_occ_cols:
-            if father_occupation.replace(" ", "_").replace("/", "_") in col:
-                input_data[col] = 1
-                break
+        # Crear los datos de entrada
+        input_data = create_input_data()
         
         # Convertir a DataFrame con el orden correcto de columnas
         input_df = pd.DataFrame([input_data])
         
-        # Asegurar que tenemos todas las columnas esperadas en el orden correcto
-        input_df = input_df.reindex(columns=columnas_esperadas, fill_value=0)
+        # Asegurar que todas las columnas esperadas estén presentes
+        for col in columnas_esperadas:
+            if col not in input_df.columns:
+                input_df[col] = 0
         
-        # Verificar tipos de datos
-        for col in input_df.columns:
-            if input_df[col].dtype == 'object':
-                input_df[col] = pd.to_numeric(input_df[col], errors='coerce').fillna(0)
+        # Reordenar columnas según el orden esperado
+        input_df = input_df[columnas_esperadas]
+        
+        # Convertir tipos de datos
+        input_df = input_df.astype(float)
         
         # Hacer la predicción
         prediction_proba = pipeline.predict_proba(input_df)[0][1]  # Probabilidad de deserción
@@ -310,17 +331,17 @@ if submitted:
         
         # Mostrar los datos ingresados (opcional)
         with st.expander("Ver datos técnicos enviados al modelo"):
-            # Mostrar solo las columnas con valores diferentes de 0
-            non_zero_data = input_df.loc[:, (input_df != 0).any(axis=0)]
-            st.dataframe(non_zero_data.T.rename(columns={0: "Valor"}))
+            st.dataframe(input_df.T.rename(columns={0: "Valor"}))
             
     except Exception as e:
         st.error(f"Error al hacer la predicción: {str(e)}")
-        # Agregar información de debug
-        st.write("Información de debug:")
-        st.write(f"Tipo de error: {type(e).__name__}")
-        st.write(f"Columnas esperadas: {len(columnas_esperadas)}")
-        st.write(f"Columnas en input_df: {len(input_df.columns) if 'input_df' in locals() else 'DataFrame no creado'}")
+        st.error(f"Tipo de error: {type(e).__name__}")
+        
+        # Información adicional de debug
+        st.write("**Información de debug:**")
+        st.write(f"Columnas esperadas: {len(columnas_esperadas) if columnas_esperadas else 'No cargadas'}")
+        if 'input_df' in locals():
+            st.write(f"Columnas en input_df: {len(input_df.columns)}")
 
 # Información adicional en el sidebar
 st.sidebar.markdown("""
@@ -333,5 +354,4 @@ st.sidebar.markdown("""
 ### Notas:
 - Los campos booleanos se convierten automáticamente (0=False, 1=True)
 - Para variables categóricas, seleccione solo una opción
-- El modelo ha sido entrenado con datos balanceados usando SMOTE
 """)
