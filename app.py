@@ -92,21 +92,21 @@ with st.form("student_form"):
             st.markdown("**Primer Semestre**")
             col2a, col2b = st.columns(2)
             with col2a:
-                units_1sem_eval = st.number_input("Unidades evaluadas", min_value=0, max_value=45, value=5)
+                units_1sem_eval = st.number_input("Unidades evaluadas (1er sem)", min_value=0, max_value=45, value=5)
             with col2b:
-                units_1sem_noeval = st.number_input("Unidades no evaluadas", min_value=0, max_value=12, value=0)
+                units_1sem_noeval = st.number_input("Unidades no evaluadas (1er sem)", min_value=0, max_value=12, value=0)
             
             # Segundo semestre
             st.markdown("**Segundo Semestre**")
             col2c, col2d = st.columns(2)
             with col2c:
-                units_2sem_credited = st.number_input("Unidades con crédito", min_value=0, max_value=19, value=0)
-                units_2sem_enrolled = st.number_input("Unidades matriculadas", min_value=0, max_value=23, value=6)
-                units_2sem_eval = st.number_input("Unidades evaluadas", min_value=0, max_value=33, value=6)
+                units_2sem_credited = st.number_input("Unidades con crédito (2do sem)", min_value=0, max_value=19, value=0)
+                units_2sem_enrolled = st.number_input("Unidades matriculadas (2do sem)", min_value=0, max_value=23, value=6)
+                units_2sem_eval = st.number_input("Unidades evaluadas (2do sem)", min_value=0, max_value=33, value=6)
             with col2d:
-                units_2sem_approved = st.number_input("Unidades aprobadas", min_value=0, max_value=20, value=4)
-                units_2sem_grade = st.number_input("Nota media", min_value=0.0, max_value=18.57, value=12.0)
-                units_2sem_noeval = st.number_input("Unidades no evaluadas", min_value=0, max_value=12, value=0)
+                units_2sem_approved = st.number_input("Unidades aprobadas (2do sem)", min_value=0, max_value=20, value=4)
+                units_2sem_grade = st.number_input("Nota media (2do sem)", min_value=0.0, max_value=18.57, value=12.0)
+                units_2sem_noeval = st.number_input("Unidades no evaluadas (2do sem)", min_value=0, max_value=12, value=0)
     
     with tab3:
         st.subheader("Información Económica")
@@ -125,12 +125,12 @@ with st.form("student_form"):
         
         with col1:
             st.markdown("**Madre**")
-            mother_qualification = st.radio("Titulación", 
+            mother_qualification = st.radio("Titulación de la madre", 
                                           options=["Basic_or_Secondary", "Other_or_Unknown", 
                                                   "Postgraduate", "Technical_Education"],
                                           horizontal=True)
             
-            mother_occupation = st.selectbox("Ocupación", options=[
+            mother_occupation = st.selectbox("Ocupación de la madre", options=[
                 "Administrative/Clerical", "Skilled Manual Workers",
                 "Special Cases", "Technicians/Associate Professionals",
                 "Unskilled Workers"
@@ -138,19 +138,18 @@ with st.form("student_form"):
         
         with col2:
             st.markdown("**Padre**")
-            father_qualification = st.radio("Titulación", 
+            father_qualification = st.radio("Titulación del padre", 
                                           options=["Basic_or_Secondary", "Other_or_Unknown", 
                                                   "Postgraduate"],
                                           horizontal=True)
             
-            father_occupation = st.selectbox("Ocupación", options=[
+            father_occupation = st.selectbox("Ocupación del padre", options=[
                 "Administrative/Clerical", "Professionals",
                 "Skilled Manual Workers", "Special Cases",
                 "Technicians/Associate Professionals"
             ])
     
-    # Nacionalidad (en la última pestaña)
-    with tab4:
+        # Nacionalidad (movido dentro del tab4 pero fuera de las columnas)
         nationality = st.selectbox("Nacionalidad", options=[
             "Colombian", "Cuban", "Dutch", "English", "German",
             "Italian", "Lithuanian", "Moldovan", "Mozambican",
