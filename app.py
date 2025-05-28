@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
-import traceback
 
 # Configuración de la página
 st.set_page_config(page_title="Predicción de Deserción Universitaria", layout="wide")
@@ -17,39 +16,17 @@ Complete el formulario con la información del estudiante para predecir el riesg
 @st.cache_resource
 def load_model():
     try:
-        # Intentar cargar el pipeline
         pipeline = joblib.load('pipeline_final_desercion.pkl')
         columnas = joblib.load('columnas_esperadas.pkl')
         return pipeline, columnas
-               
     except Exception as e:
-        st.error("Error al cargar el modelo:")
-        st.error(traceback.format_exc())
+        st.error(f"Error cargando el modelo: {str(e)}")
         return None, None
-
-# Mostrar información de depuración
-st.sidebar.markdown("### Estado del Sistema")
 
 pipeline, columnas_esperadas = load_model()
 
 if pipeline is None:
-    st.error("No se pudo cargar el modelo. Verifica los archivos.")
     st.stop()
-else:
-    st.sidebar.success("✅ Modelo cargado")
-    
-    # Información adicional del modelo
-    with st.sidebar.expander("Información del Modelo"):
-        st.write(f"Tipo de pipeline: {type(pipeline)}")
-        if hasattr(pipeline, 'named_steps'):
-            st.write("Pasos del pipeline:")
-            for name, step in pipeline.named_steps.items():
-                st.write(f"- {name}: {type(step).__name__}")
-        
-        if columnas_esperadas is not None:
-            st.write(f"Número de características: {len(columnas_esperadas)}")
-            st.write("Columnas del modelo:")
-            st.write(columnas_esperadas)
 
 # Crear formulario para la entrada de datos
 with st.form("student_form"):
@@ -183,81 +160,133 @@ with st.form("student_form"):
 
 # Cuando se envía el formulario
 if submitted:
-    # Crear un diccionario con todas las columnas esperadas inicializadas a 0
-    input_data = {col: 0 for col in columnas_esperadas}
-    
-    # Mapeo de titulaciones previas a códigos numéricos
-    prev_qualification_map = {
-        "Secondary education": 1,
-        "Higher education - bachelor's degree": 2,
-        "Higher education - degree": 3,
-        "Higher education - master's": 4,
-        "Higher education - doctorate": 5,
-        "Frequency of higher education": 6,
-        "12th year of schooling - not completed": 9,
-        "11th year of schooling - not completed": 10,
-        "Other - 11th year of schooling": 12,
-        "10th year of schooling": 14,
-        "10th year of schooling - not completed": 15,
-        "Basic education 3rd cycle": 19,
-        "Basic education 2nd cycle": 38,
-        "Technological specialization course": 39,
-        "Higher education - degree (1st cycle)": 40,
-        "Professional higher technical course": 42,
-        "Higher education - master (2nd cycle)": 43
-    }
-    
-    # Actualizar los valores ingresados
-    input_data.update({
-        # Información personal
-        'Age at enrollment': age,
-        'Gender': gender,
-        'Displaced': int(displaced),
-        'Debtor': int(debtor),
-        'Tuition fees up to date': int(tuition_up_to_date),
-        'Scholarship holder': int(scholarship),
-        f'Marital status_{marital_status}': 1,
+    try:
+        # Crear un diccionario con todas las columnas esperadas inicializadas a 0
+        input_data = {col: 0 for col in columnas_esperadas}
         
-        # Datos académicos
-        'Application order': application_order,
-        'Daytime/evening attendance': daytime_attendance,
-        'Previous qualification (grade)': prev_qualification_map[prev_qualification],
-        'Admission grade': admission_grade,
-        f'Application mode_{application_mode.replace(" ", "_")}': 1,
-        f'Course_{course}': 1,
+        # Mapeo de titulaciones previas a códigos numéricos
+        prev_qualification_map = {
+            "Secondary education": 1,
+            "Higher education - bachelor's degree": 2,
+            "Higher education - degree": 3,
+            "Higher education - master's": 4,
+            "Higher education - doctorate": 5,
+            "Frequency of higher education": 6,
+            "12th year of schooling - not completed": 9,
+            "11th year of schooling - not completed": 10,
+            "Other - 11th year of schooling": 12,
+            "10th year of schooling": 14,
+            "10th year of schooling - not completed": 15,
+            "Basic education 3rd cycle": 19,
+            "Basic education 2nd cycle": 38,
+            "Technological specialization course": 39,
+            "Higher education - degree (1st cycle)": 40,
+            "Professional higher technical course": 42,
+            "Higher education - master (2nd cycle)": 43
+        }
         
-        # Primer semestre
-        'Curricular units 1st sem (evaluations)': units_1sem_eval,
-        'Curricular units 1st sem (without evaluations)': units_1sem_noeval,
+        # Actualizar los valores ingresados - CORREGIDO: usar nombres exactos de columnas
+        input_data.update({
+            # Información personal
+            'Age at enrollment': age,
+            'Gender': gender,
+            'Displaced': int(displaced),
+            'Debtor': int(debtor),
+            'Tuition fees up to date': int(tuition_up_to_date),
+            'Scholarship holder': int(scholarship),
+            
+            # Datos académicos
+            'Application order': application_order,
+            'Daytime/evening attendance': daytime_attendance,
+            'Previous qualification (grade)': prev_qualification_map[prev_qualification],
+            'Admission grade': admission_grade,
+            
+            # Primer semestre
+            'Curricular units 1st sem (evaluations)': units_1sem_eval,
+            'Curricular units 1st sem (without evaluations)': units_1sem_noeval,
+            
+            # Segundo semestre
+            'Curricular units 2nd sem (credited)': units_2sem_credited,
+            'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,
+            'Curricular units 2nd sem (evaluations)': units_2sem_eval,
+            'Curricular units 2nd sem (approved)': units_2sem_approved,
+            'Curricular units 2nd sem (grade)': units_2sem_grade,
+            'Curricular units 2nd sem (without evaluations)': units_2sem_noeval,
+            
+            # Información económica
+            'Unemployment rate': unemployment,
+            'Inflation rate': inflation,
+            'GDP': gdp,
+        })
         
-        # Segundo semestre
-        'Curricular units 2nd sem (credited)': units_2sem_credited,
-        'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,
-        'Curricular units 2nd sem (evaluations)': units_2sem_eval,
-        'Curricular units 2nd sem (approved)': units_2sem_approved,
-        'Curricular units 2nd sem (grade)': units_2sem_grade,
-        'Curricular units 2nd sem (without evaluations)': units_2sem_noeval,
+        # Variables categóricas - usar nombres exactos de las columnas del modelo
+        # Estado civil
+        marital_status_cols = [col for col in columnas_esperadas if col.startswith('Marital status_')]
+        for col in marital_status_cols:
+            if f'Marital status_{marital_status}' == col:
+                input_data[col] = 1
         
-        # Información económica
-        'Unemployment rate': unemployment,
-        'Inflation rate': inflation,
-        'GDP': gdp,
+        # Modo de aplicación  
+        application_mode_cols = [col for col in columnas_esperadas if col.startswith('Application mode_')]
+        for col in application_mode_cols:
+            if application_mode.replace(" ", "_") in col or application_mode.replace("/", "_") in col:
+                input_data[col] = 1
+                break
         
-        # Historial familiar
-        f'Mother\'s qualification_{mother_qualification}': 1,
-        f'Mother\'s occupation_{mother_occupation.replace(" ", "_")}': 1,
-        f'Father\'s qualification_{father_qualification}': 1,
-        f'Father\'s occupation_{father_occupation.replace(" ", "_")}': 1,
+        # Curso
+        course_cols = [col for col in columnas_esperadas if col.startswith('Course_')]
+        for col in course_cols:
+            if course in col:
+                input_data[col] = 1
+                break
         
         # Nacionalidad
-        f'Nacionality_{nationality}': 1
-    })
-    
-    # Convertir a DataFrame
-    input_df = pd.DataFrame([input_data])[columnas_esperadas]
-    
-    # Hacer la predicción
-    try:
+        nationality_cols = [col for col in columnas_esperadas if col.startswith('Nacionality_')]
+        for col in nationality_cols:
+            if nationality in col:
+                input_data[col] = 1
+                break
+        
+        # Calificación de madre
+        mother_qual_cols = [col for col in columnas_esperadas if col.startswith("Mother's qualification_")]
+        for col in mother_qual_cols:
+            if mother_qualification in col:
+                input_data[col] = 1
+                break
+        
+        # Ocupación de madre
+        mother_occ_cols = [col for col in columnas_esperadas if col.startswith("Mother's occupation_")]
+        for col in mother_occ_cols:
+            if mother_occupation.replace(" ", "_").replace("/", "_") in col:
+                input_data[col] = 1
+                break
+        
+        # Calificación de padre
+        father_qual_cols = [col for col in columnas_esperadas if col.startswith("Father's qualification_")]
+        for col in father_qual_cols:
+            if father_qualification in col:
+                input_data[col] = 1
+                break
+        
+        # Ocupación de padre
+        father_occ_cols = [col for col in columnas_esperadas if col.startswith("Father's occupation_")]
+        for col in father_occ_cols:
+            if father_occupation.replace(" ", "_").replace("/", "_") in col:
+                input_data[col] = 1
+                break
+        
+        # Convertir a DataFrame con el orden correcto de columnas
+        input_df = pd.DataFrame([input_data])
+        
+        # Asegurar que tenemos todas las columnas esperadas en el orden correcto
+        input_df = input_df.reindex(columns=columnas_esperadas, fill_value=0)
+        
+        # Verificar tipos de datos
+        for col in input_df.columns:
+            if input_df[col].dtype == 'object':
+                input_df[col] = pd.to_numeric(input_df[col], errors='coerce').fillna(0)
+        
+        # Hacer la predicción
         prediction_proba = pipeline.predict_proba(input_df)[0][1]  # Probabilidad de deserción
         prediction_percent = round(prediction_proba * 100, 2)
         
@@ -281,10 +310,17 @@ if submitted:
         
         # Mostrar los datos ingresados (opcional)
         with st.expander("Ver datos técnicos enviados al modelo"):
-            st.dataframe(input_df.T.rename(columns={0: "Valor"}))
+            # Mostrar solo las columnas con valores diferentes de 0
+            non_zero_data = input_df.loc[:, (input_df != 0).any(axis=0)]
+            st.dataframe(non_zero_data.T.rename(columns={0: "Valor"}))
             
     except Exception as e:
         st.error(f"Error al hacer la predicción: {str(e)}")
+        # Agregar información de debug
+        st.write("Información de debug:")
+        st.write(f"Tipo de error: {type(e).__name__}")
+        st.write(f"Columnas esperadas: {len(columnas_esperadas)}")
+        st.write(f"Columnas en input_df: {len(input_df.columns) if 'input_df' in locals() else 'DataFrame no creado'}")
 
 # Información adicional en el sidebar
 st.sidebar.markdown("""
@@ -297,4 +333,5 @@ st.sidebar.markdown("""
 ### Notas:
 - Los campos booleanos se convierten automáticamente (0=False, 1=True)
 - Para variables categóricas, seleccione solo una opción
+- El modelo ha sido entrenado con datos balanceados usando SMOTE
 """)
