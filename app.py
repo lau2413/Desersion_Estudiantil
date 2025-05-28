@@ -1,1 +1,337 @@
-{"cells":[{"cell_type":"markdown","metadata":{"formattedRanges":[],"cell_id":"44fc5aa96a1548f1824b0468027ea671","deepnote_cell_type":"text-cell-h1"},"source":"# Despliegue","block_group":"6736621a8a654bc6bf3f9d1d408b29ae"},{"cell_type":"markdown","metadata":{"formattedRanges":[],"cell_id":"00c3e07a2a89440c845a1f4179a5f0ac","deepnote_cell_type":"text-cell-p"},"source":"\r* cargamos el modelo\r\n* cargamos los datos futuros\r\n* aplicar tubería","block_group":"bc4acef6c6724003bd5736b485448b50"},{"cell_type":"code","metadata":{"source_hash":"9d9ff0d5","execution_start":1748407936378,"execution_millis":596,"execution_context_id":"3baee7f6-8612-4d6c-9402-fa1ac2c0e651","cell_id":"e44f0edb14634cc2ae1bd6f36a044a22","deepnote_cell_type":"code"},"source":"import numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport joblib","block_group":"e44f0edb14634cc2ae1bd6f36a044a22","execution_count":10,"outputs":[],"outputs_reference":null,"content_dependencies":null},{"cell_type":"code","metadata":{"source_hash":"633128ba","execution_start":1748406867878,"execution_millis":289,"execution_context_id":"3baee7f6-8612-4d6c-9402-fa1ac2c0e651","cell_id":"e3aa8eb35fca4d3eaf8529afa4ac237e","deepnote_cell_type":"code"},"source":"#Cargamos el pipeline con el modelo\n#import pickle\n#filename = 'pipeline_final_desercion.pkl'\n#pipeline = pickle.load(open(filename, 'rb'))\n#pipeline\n#pipeline luego de verificar que el código es funcional se comenta","block_group":"c9492bd923a44b819ec61941d78c78b3","execution_count":4,"outputs":[{"output_type":"execute_result","execution_count":4,"data":{"text/plain":"Pipeline(steps=[('preprocessor',\n                 ColumnTransformer(remainder='passthrough',\n                                   transformers=[('scaler', MinMaxScaler(),\n                                                  ['Previous qualification '\n                                                   '(grade)',\n                                                   'Admission grade',\n                                                   'Curricular units 2nd sem '\n                                                   '(grade)',\n                                                   'Unemployment rate',\n                                                   'Inflation rate', 'GDP',\n                                                   'Application order',\n                                                   'Age at enrollment',\n                                                   'Curricular units 1st sem '\n                                                   '(evaluations)',\n                                                   'Curricular units 1st sem '\n                                                   '(without eval...\n                               gamma=0.0, grow_policy=None,\n                               importance_type=None,\n                               interaction_constraints=None,\n                               learning_rate=0.08905618676080333, max_bin=None,\n                               max_cat_threshold=None, max_cat_to_onehot=None,\n                               max_delta_step=None, max_depth=10,\n                               max_leaves=None, min_child_weight=None,\n                               missing=nan, monotone_constraints=None,\n                               multi_strategy=None, n_estimators=64,\n                               n_jobs=None, num_parallel_tree=None, ...))])","text/html":"<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>Pipeline(steps=[(&#x27;preprocessor&#x27;,\n                 ColumnTransformer(remainder=&#x27;passthrough&#x27;,\n                                   transformers=[(&#x27;scaler&#x27;, MinMaxScaler(),\n                                                  [&#x27;Previous qualification &#x27;\n                                                   &#x27;(grade)&#x27;,\n                                                   &#x27;Admission grade&#x27;,\n                                                   &#x27;Curricular units 2nd sem &#x27;\n                                                   &#x27;(grade)&#x27;,\n                                                   &#x27;Unemployment rate&#x27;,\n                                                   &#x27;Inflation rate&#x27;, &#x27;GDP&#x27;,\n                                                   &#x27;Application order&#x27;,\n                                                   &#x27;Age at enrollment&#x27;,\n                                                   &#x27;Curricular units 1st sem &#x27;\n                                                   &#x27;(evaluations)&#x27;,\n                                                   &#x27;Curricular units 1st sem &#x27;\n                                                   &#x27;(without eval...\n                               gamma=0.0, grow_policy=None,\n                               importance_type=None,\n                               interaction_constraints=None,\n                               learning_rate=0.08905618676080333, max_bin=None,\n                               max_cat_threshold=None, max_cat_to_onehot=None,\n                               max_delta_step=None, max_depth=10,\n                               max_leaves=None, min_child_weight=None,\n                               missing=nan, monotone_constraints=None,\n                               multi_strategy=None, n_estimators=64,\n                               n_jobs=None, num_parallel_tree=None, ...))])</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item sk-dashed-wrapped\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" ><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">Pipeline</label><div class=\"sk-toggleable__content\"><pre>Pipeline(steps=[(&#x27;preprocessor&#x27;,\n                 ColumnTransformer(remainder=&#x27;passthrough&#x27;,\n                                   transformers=[(&#x27;scaler&#x27;, MinMaxScaler(),\n                                                  [&#x27;Previous qualification &#x27;\n                                                   &#x27;(grade)&#x27;,\n                                                   &#x27;Admission grade&#x27;,\n                                                   &#x27;Curricular units 2nd sem &#x27;\n                                                   &#x27;(grade)&#x27;,\n                                                   &#x27;Unemployment rate&#x27;,\n                                                   &#x27;Inflation rate&#x27;, &#x27;GDP&#x27;,\n                                                   &#x27;Application order&#x27;,\n                                                   &#x27;Age at enrollment&#x27;,\n                                                   &#x27;Curricular units 1st sem &#x27;\n                                                   &#x27;(evaluations)&#x27;,\n                                                   &#x27;Curricular units 1st sem &#x27;\n                                                   &#x27;(without eval...\n                               gamma=0.0, grow_policy=None,\n                               importance_type=None,\n                               interaction_constraints=None,\n                               learning_rate=0.08905618676080333, max_bin=None,\n                               max_cat_threshold=None, max_cat_to_onehot=None,\n                               max_delta_step=None, max_depth=10,\n                               max_leaves=None, min_child_weight=None,\n                               missing=nan, monotone_constraints=None,\n                               multi_strategy=None, n_estimators=64,\n                               n_jobs=None, num_parallel_tree=None, ...))])</pre></div></div></div><div class=\"sk-serial\"><div class=\"sk-item sk-dashed-wrapped\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-2\" type=\"checkbox\" ><label for=\"sk-estimator-id-2\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">preprocessor: ColumnTransformer</label><div class=\"sk-toggleable__content\"><pre>ColumnTransformer(remainder=&#x27;passthrough&#x27;,\n                  transformers=[(&#x27;scaler&#x27;, MinMaxScaler(),\n                                 [&#x27;Previous qualification (grade)&#x27;,\n                                  &#x27;Admission grade&#x27;,\n                                  &#x27;Curricular units 2nd sem (grade)&#x27;,\n                                  &#x27;Unemployment rate&#x27;, &#x27;Inflation rate&#x27;, &#x27;GDP&#x27;,\n                                  &#x27;Application order&#x27;, &#x27;Age at enrollment&#x27;,\n                                  &#x27;Curricular units 1st sem (evaluations)&#x27;,\n                                  &#x27;Curricular units 1st sem (without &#x27;\n                                  &#x27;evaluations)&#x27;,\n                                  &#x27;Curricular units 2nd sem (credited)&#x27;,\n                                  &#x27;Curricular units 2nd sem (enrolled)&#x27;,\n                                  &#x27;Curricular units 2nd sem (evaluations)&#x27;,\n                                  &#x27;Curricular units 2nd sem (approved)&#x27;,\n                                  &#x27;Curricular units 2nd sem (without &#x27;\n                                  &#x27;evaluations)&#x27;])])</pre></div></div></div><div class=\"sk-parallel\"><div class=\"sk-parallel-item\"><div class=\"sk-item\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-3\" type=\"checkbox\" ><label for=\"sk-estimator-id-3\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">scaler</label><div class=\"sk-toggleable__content\"><pre>[&#x27;Previous qualification (grade)&#x27;, &#x27;Admission grade&#x27;, &#x27;Curricular units 2nd sem (grade)&#x27;, &#x27;Unemployment rate&#x27;, &#x27;Inflation rate&#x27;, &#x27;GDP&#x27;, &#x27;Application order&#x27;, &#x27;Age at enrollment&#x27;, &#x27;Curricular units 1st sem (evaluations)&#x27;, &#x27;Curricular units 1st sem (without evaluations)&#x27;, &#x27;Curricular units 2nd sem (credited)&#x27;, &#x27;Curricular units 2nd sem (enrolled)&#x27;, &#x27;Curricular units 2nd sem (evaluations)&#x27;, &#x27;Curricular units 2nd sem (approved)&#x27;, &#x27;Curricular units 2nd sem (without evaluations)&#x27;]</pre></div></div></div><div class=\"sk-serial\"><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-4\" type=\"checkbox\" ><label for=\"sk-estimator-id-4\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">MinMaxScaler</label><div class=\"sk-toggleable__content\"><pre>MinMaxScaler()</pre></div></div></div></div></div></div><div class=\"sk-parallel-item\"><div class=\"sk-item\"><div class=\"sk-label-container\"><div class=\"sk-label sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-5\" type=\"checkbox\" ><label for=\"sk-estimator-id-5\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">remainder</label><div class=\"sk-toggleable__content\"><pre></pre></div></div></div><div class=\"sk-serial\"><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-6\" type=\"checkbox\" ><label for=\"sk-estimator-id-6\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">passthrough</label><div class=\"sk-toggleable__content\"><pre>passthrough</pre></div></div></div></div></div></div></div></div><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-7\" type=\"checkbox\" ><label for=\"sk-estimator-id-7\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">XGBClassifier</label><div class=\"sk-toggleable__content\"><pre>XGBClassifier(base_score=None, booster=None, callbacks=None,\n              colsample_bylevel=None, colsample_bynode=None,\n              colsample_bytree=1.0, device=None, early_stopping_rounds=None,\n              enable_categorical=False, eval_metric=&#x27;logloss&#x27;,\n              feature_types=None, feature_weights=None, gamma=0.0,\n              grow_policy=None, importance_type=None,\n              interaction_constraints=None, learning_rate=0.08905618676080333,\n              max_bin=None, max_cat_threshold=None, max_cat_to_onehot=None,\n              max_delta_step=None, max_depth=10, max_leaves=None,\n              min_child_weight=None, missing=nan, monotone_constraints=None,\n              multi_strategy=None, n_estimators=64, n_jobs=None,\n              num_parallel_tree=None, ...)</pre></div></div></div></div></div></div></div>"},"metadata":{}}],"outputs_reference":"s3:deepnote-cell-outputs-production/b21102d7-d012-402f-b2e7-f7c4039b37dc","content_dependencies":null},{"cell_type":"code","metadata":{"cell_id":"02fea7839e1e4623928d3c88745bb0a5","deepnote_cell_type":"code"},"source":"import streamlit as st\n\n# Configuración de la página\nst.set_page_config(page_title=\"Predicción de Deserción Universitaria\", layout=\"wide\")\n\n# Título de la aplicación\nst.title(\"Sistema de Predicción de Deserción Universitaria\")\nst.markdown(\"\"\"\nEsta aplicación predice la probabilidad de que un estudiante abandone sus estudios \nbasándose en sus características académicas y demográficas.\n\"\"\")\n\n# Cargar el pipeline y las columnas esperadas\n@st.cache_resource\ndef load_model():\n    pipeline = joblib.load('data/pipeline_final_desercion.pkl')\n    columnas = joblib.load('data/columnas_esperadas.pkl')\n    return pipeline, columnas\n\npipeline, columnas_esperadas = load_model()\n\n# Crear formulario para la entrada de datos\nwith st.form(\"prediction_form\"):\n    st.header(\"Información del Estudiante\")\n    \n    # Dividir en columnas para mejor organización\n    col1, col2, col3 = st.columns(3)\n    \n    with col1:\n        st.subheader(\"Datos Demográficos\")\n        age = st.number_input(\"Edad al matricularse\", min_value=15, max_value=80, value=20)\n        gender = st.selectbox(\"Género\", options=[0, 1], format_func=lambda x: \"Masculino\" if x == 0 else \"Femenino\")\n        displaced = st.selectbox(\"Desplazado\", options=[0, 1], format_func=lambda x: \"No\" if x == 0 else \"Sí\")\n        debtor = st.selectbox(\"Deudor\", options=[0, 1], format_func=lambda x: \"No\" if x == 0 else \"Sí\")\n        tuition_up_to_date = st.selectbox(\"Matrícula al día\", options=[0, 1], format_func=lambda x: \"No\" if x == 0 else \"Sí\")\n        scholarship = st.selectbox(\"Becado\", options=[0, 1], format_func=lambda x: \"No\" if x == 0 else \"Sí\")\n    \n    with col2:\n        st.subheader(\"Historial Académico\")\n        prev_qualification_grade = st.number_input(\"Nota de la titulación previa\", min_value=0.0, max_value=20.0, value=12.0)\n        admission_grade = st.number_input(\"Nota de admisión\", min_value=0.0, max_value=20.0, value=12.0)\n        application_order = st.number_input(\"Orden de aplicación\", min_value=0, value=1)\n        daytime_attendance = st.selectbox(\"Asistencia diurna/nocturna\", options=[1, 0], format_func=lambda x: \"Diurna\" if x == 1 else \"Nocturna\")\n        \n    with col3:\n        st.subheader(\"Rendimiento Académico\")\n        units_1sem_eval = st.number_input(\"Unidades curriculares 1er sem (evaluadas)\", min_value=0, value=5)\n        units_1sem_noeval = st.number_input(\"Unidades curriculares 1er sem (no evaluadas)\", min_value=0, value=0)\n        units_2sem_credited = st.number_input(\"Unidades curriculares 2do sem (con crédito)\", min_value=0, value=0)\n        units_2sem_enrolled = st.number_input(\"Unidades curriculares 2do sem (matriculadas)\", min_value=0, value=6)\n        units_2sem_eval = st.number_input(\"Unidades curriculares 2do sem (evaluadas)\", min_value=0, value=6)\n        units_2sem_approved = st.number_input(\"Unidades curriculares 2do sem (aprobadas)\", min_value=0, value=4)\n        units_2sem_grade = st.number_input(\"Nota media 2do semestre\", min_value=0.0, max_value=20.0, value=12.0)\n    \n    # Variables económicas (ocultas por defecto)\n    with st.expander(\"Variables Económicas (Avanzadas)\"):\n        unemployment = st.number_input(\"Tasa de desempleo\", min_value=0.0, max_value=100.0, value=10.0)\n        inflation = st.number_input(\"Tasa de inflación\", min_value=0.0, max_value=100.0, value=2.0)\n        gdp = st.number_input(\"PIB\", min_value=0.0, value=15000.0)\n    \n    # Variables dummy (establecer valores por defecto a 0)\n    marital_status = st.selectbox(\"Estado civil\", options=[\"Single\", \"Divorced\", \"FactoUnion\", \"Separated\"])\n    application_mode = st.selectbox(\"Modo de aplicación\", options=[\n        \"Admisión Regular\", \"Admisión Especial\", \n        \"Mayores de 23 años\", \"Estudiantes Internacionales\"\n    ])\n    \n    submitted = st.form_submit_button(\"Predecir Probabilidad de Deserción\")\n\n# Cuando se envía el formulario\nif submitted:\n    # Crear un dataframe con todas las columnas esperadas\n    input_data = {col: 0 for col in columnas_esperadas}  # Inicializar todo a 0\n    \n    # Actualizar los valores ingresados\n    input_data.update({\n        'Age at enrollment': age,\n        'Gender': gender,\n        'Displaced': displaced,\n        'Debtor': debtor,\n        'Tuition fees up to date': tuition_up_to_date,\n        'Scholarship holder': scholarship,\n        'Previous qualification (grade)': prev_qualification_grade,\n        'Admission grade': admission_grade,\n        'Application order': application_order,\n        'Daytime/evening attendance': daytime_attendance,\n        'Curricular units 1st sem (evaluations)': units_1sem_eval,\n        'Curricular units 1st sem (without evaluations)': units_1sem_noeval,\n        'Curricular units 2nd sem (credited)': units_2sem_credited,\n        'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,\n        'Curricular units 2nd sem (evaluations)': units_2sem_eval,\n        'Curricular units 2nd sem (approved)': units_2sem_approved,\n        'Curricular units 2nd sem (grade)': units_2sem_grade,\n        'Unemployment rate': unemployment,\n        'Inflation rate': inflation,\n        'GDP': gdp,\n        f'Marital status_{marital_status}': 1,\n        f'Application mode_{application_mode}': 1\n    })\n    \n    # Convertir a DataFrame\n    input_df = pd.DataFrame([input_data])[columnas_esperadas]\n    \n    # Hacer la predicción\n    try:\n        prediction = pipeline.predict_proba(input_df)[0][1]  # Probabilidad de deserción\n        prediction_percent = round(prediction * 100, 2)\n        \n        # Mostrar resultados\n        st.subheader(\"Resultado de la Predicción\")\n        \n        # Barra de progreso para visualización\n        st.progress(prediction)\n        st.metric(\"Probabilidad de Deserción\", f\"{prediction_percent}%\")\n        \n        # Interpretación\n        if prediction > 0.7:\n            st.error(\"Alto riesgo de deserción. Se recomienda intervención inmediata.\")\n        elif prediction > 0.4:\n            st.warning(\"Riesgo moderado de deserción. Monitorizar al estudiante.\")\n        else:\n            st.success(\"Bajo riesgo de deserción.\")\n            \n        # Mostrar los datos ingresados (opcional)\n        with st.expander(\"Ver datos ingresados\"):\n            st.dataframe(input_df.T.style.background_gradient(cmap='Blues'))\n            \n    except Exception as e:\n        st.error(f\"Error al hacer la predicción: {str(e)}\")\n\n# Información adicional\nst.sidebar.markdown(\"\"\"\n### Instrucciones:\n1. Complete el formulario con la información del estudiante.\n2. Haga clic en **Predecir Probabilidad de Deserción**.\n3. Revise los resultados y las recomendaciones.\n\n### Notas:\n- Los campos con valores binarios (0/1) representan: 0=No, 1=Sí\n- Para variables categóricas, seleccione la opción correspondiente.\n\"\"\")","block_group":"113e8697cd314d57a43799519ffb6a44","execution_count":null,"outputs":[],"outputs_reference":null,"content_dependencies":null},{"cell_type":"markdown","source":"<a style='text-decoration:none;line-height:16px;display:flex;color:#5B5B62;padding:10px;justify-content:end;' href='https://deepnote.com?utm_source=created-in-deepnote-cell&projectId=ef7c6378-2156-4a8c-80f7-71946664b1f4' target=\"_blank\">\n<img alt='Created in deepnote.com' style='display:inline;max-height:16px;margin:0px;margin-right:7.5px;' src='data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iODBweCIgaGVpZ2h0PSI4MHB4IiB2aWV3Qm94PSIwIDAgODAgODAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDU0LjEgKDc2NDkwKSAtIGh0dHBzOi8vc2tldGNoYXBwLmNvbSAtLT4KICAgIDx0aXRsZT5Hcm91cCAzPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGcgaWQ9IkxhbmRpbmciIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSJBcnRib2FyZCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTEyMzUuMDAwMDAwLCAtNzkuMDAwMDAwKSI+CiAgICAgICAgICAgIDxnIGlkPSJHcm91cC0zIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMjM1LjAwMDAwMCwgNzkuMDAwMDAwKSI+CiAgICAgICAgICAgICAgICA8cG9seWdvbiBpZD0iUGF0aC0yMCIgZmlsbD0iIzAyNjVCNCIgcG9pbnRzPSIyLjM3NjIzNzYyIDgwIDM4LjA0NzY2NjcgODAgNTcuODIxNzgyMiA3My44MDU3NTkyIDU3LjgyMTc4MjIgMzIuNzU5MjczOSAzOS4xNDAyMjc4IDMxLjY4MzE2ODMiPjwvcG9seWdvbj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0zNS4wMDc3MTgsODAgQzQyLjkwNjIwMDcsNzYuNDU0OTM1OCA0Ny41NjQ5MTY3LDcxLjU0MjI2NzEgNDguOTgzODY2LDY1LjI2MTk5MzkgQzUxLjExMjI4OTksNTUuODQxNTg0MiA0MS42NzcxNzk1LDQ5LjIxMjIyODQgMjUuNjIzOTg0Niw0OS4yMTIyMjg0IEMyNS40ODQ5Mjg5LDQ5LjEyNjg0NDggMjkuODI2MTI5Niw0My4yODM4MjQ4IDM4LjY0NzU4NjksMzEuNjgzMTY4MyBMNzIuODcxMjg3MSwzMi41NTQ0MjUgTDY1LjI4MDk3Myw2Ny42NzYzNDIxIEw1MS4xMTIyODk5LDc3LjM3NjE0NCBMMzUuMDA3NzE4LDgwIFoiIGlkPSJQYXRoLTIyIiBmaWxsPSIjMDAyODY4Ij48L3BhdGg+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMCwzNy43MzA0NDA1IEwyNy4xMTQ1MzcsMC4yNTcxMTE0MzYgQzYyLjM3MTUxMjMsLTEuOTkwNzE3MDEgODAsMTAuNTAwMzkyNyA4MCwzNy43MzA0NDA1IEM4MCw2NC45NjA0ODgyIDY0Ljc3NjUwMzgsNzkuMDUwMzQxNCAzNC4zMjk1MTEzLDgwIEM0Ny4wNTUzNDg5LDc3LjU2NzA4MDggNTMuNDE4MjY3Nyw3MC4zMTM2MTAzIDUzLjQxODI2NzcsNTguMjM5NTg4NSBDNTMuNDE4MjY3Nyw0MC4xMjg1NTU3IDM2LjMwMzk1NDQsMzcuNzMwNDQwNSAyNS4yMjc0MTcsMzcuNzMwNDQwNSBDMTcuODQzMDU4NiwzNy43MzA0NDA1IDkuNDMzOTE5NjYsMzcuNzMwNDQwNSAwLDM3LjczMDQ0MDUgWiIgaWQ9IlBhdGgtMTkiIGZpbGw9IiMzNzkzRUYiPjwvcGF0aD4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+' > </img>\nCreated in <span style='font-weight:600;margin-left:4px;'>Deepnote</span></a>","metadata":{"created_in_deepnote_cell":true,"deepnote_cell_type":"markdown"}}],"nbformat":4,"nbformat_minor":0,"metadata":{"deepnote_persisted_session":{"createdAt":"2025-05-28T05:11:58.355Z"},"deepnote_notebook_id":"8c9d0d1809d842afb22add61de740b60"}}
+import streamlit as st
+import pandas as pd
+import joblib
+import numpy as np
+
+# Configuración de la página
+st.set_page_config(page_title="Predicción de Deserción Universitaria", layout="wide")
+
+# Título de la aplicación
+st.title("Sistema de Predicción de Deserción Universitaria")
+st.markdown("""
+Complete el formulario con la información del estudiante para predecir el riesgo de deserción.
+""")
+
+# Cargar el modelo y las columnas esperadas
+@st.cache_resource
+def load_model():
+    try:
+        pipeline = joblib.load('pipeline_final_desercion.pkl')
+        columnas = joblib.load('columnas_esperadas.pkl')
+        return pipeline, columnas
+    except Exception as e:
+        st.error(f"Error cargando el modelo: {str(e)}")
+        return None, None
+
+pipeline, columnas_esperadas = load_model()
+
+if pipeline is None:
+    st.stop()
+
+# Justo después de cargar el modelo
+st.write(f"Tipo de pipeline cargado: {type(pipeline)}")
+
+# Crear formulario para la entrada de datos
+with st.form("student_form"):
+    # Dividir el formulario en pestañas para mejor organización
+    tab1, tab2, tab3, tab4 = st.tabs(["Información Personal", "Datos Académicos", "Información Económica", "Historial Familiar"])
+    
+    with tab1:
+        st.subheader("Información Personal")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            age = st.number_input("Edad al matricularse", min_value=17, max_value=70, value=20)
+            gender = st.radio("Género", options=[1, 0], format_func=lambda x: "Masculino" if x == 1 else "Femenino")
+            marital_status = st.radio("Estado civil", 
+                                     options=["Single", "Divorced", "FactoUnion", "Separated"],
+                                     horizontal=True)
+            
+        with col2:
+            displaced = st.checkbox("Desplazado", value=False)
+            debtor = st.checkbox("Deudor", value=False)
+            tuition_up_to_date = st.checkbox("Matrícula al día", value=True)
+            scholarship = st.checkbox("Becado", value=False)
+    
+    with tab2:
+        st.subheader("Datos Académicos")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            application_order = st.slider("Orden de aplicación", 0, 9, 1)
+            daytime_attendance = st.radio("Asistencia", options=[1, 0], 
+                                        format_func=lambda x: "Diurna" if x == 1 else "Nocturna",
+                                        horizontal=True)
+            
+            prev_qualification_grade = st.number_input("Nota de titulación previa", min_value=0.0, max_value=200.0, value=120.0)
+            
+            prev_qualification = st.selectbox("Tipo de titulación previa", options=[
+                "Secondary Education", "Higher Education", "Technical Education", "Other"
+            ])
+            
+            admission_grade = st.number_input("Nota de admisión", min_value=0.0, max_value=200.0, value=120.0)
+            
+        with col2:
+            application_mode = st.selectbox("Modo de aplicación", options=[
+                "Admisión Regular", "Admisión Especial", 
+                "Admisión por Ordenanza", "Cambios/Transferencias",
+                "Estudiantes Internacionales", "Mayores de 23 años"
+            ])
+            
+            course = st.selectbox("Curso", options=[
+                "Agricultural & Environmental Sciences", "Arts & Design",
+                "Business & Management", "Communication & Media",
+                "Education", "Engineering & Technology",
+                "Health Sciences", "Social Sciences"
+            ])
+            
+            # Primer semestre
+            st.markdown("**Primer Semestre**")
+            col2a, col2b = st.columns(2)
+            with col2a:
+                units_1sem_eval = st.number_input("Unidades evaluadas (1er sem)", min_value=0, max_value=45, value=5)
+            with col2b:
+                units_1sem_noeval = st.number_input("Unidades no evaluadas (1er sem)", min_value=0, max_value=12, value=0)
+            
+            # Segundo semestre
+            st.markdown("**Segundo Semestre**")
+            col2c, col2d = st.columns(2)
+            with col2c:
+                units_2sem_credited = st.number_input("Unidades con crédito (2do sem)", min_value=0, max_value=19, value=0)
+                units_2sem_enrolled = st.number_input("Unidades matriculadas (2do sem)", min_value=0, max_value=23, value=6)
+                units_2sem_eval = st.number_input("Unidades evaluadas (2do sem)", min_value=0, max_value=33, value=6)
+            with col2d:
+                units_2sem_approved = st.number_input("Unidades aprobadas (2do sem)", min_value=0, max_value=20, value=4)
+                units_2sem_grade = st.number_input("Nota media (2do sem)", min_value=0.0, max_value=18.57, value=12.0)
+                units_2sem_noeval = st.number_input("Unidades no evaluadas (2do sem)", min_value=0, max_value=12, value=0)
+    
+    with tab3:
+        st.subheader("Información Económica")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            unemployment = st.slider("Tasa de desempleo (%)", min_value=7.6, max_value=16.2, value=10.0)
+            inflation = st.slider("Tasa de inflación (%)", min_value=-0.8, max_value=3.7, value=1.5)
+        
+        with col2:
+            gdp = st.slider("GDP", min_value=-4.06, max_value=3.51, value=0.0)
+    
+    with tab4:
+        st.subheader("Historial Familiar")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Madre**")
+            mother_qualification = st.radio("Titulación de la madre", 
+                                          options=["Basic_or_Secondary", "Other_or_Unknown", 
+                                                  "Postgraduate", "Technical_Education"],
+                                          horizontal=True)
+            
+            mother_occupation = st.selectbox("Ocupación de la madre", options=[
+                "Administrative/Clerical", "Skilled Manual Workers",
+                "Special Cases", "Technicians/Associate Professionals",
+                "Unskilled Workers"
+            ])
+        
+        with col2:
+            st.markdown("**Padre**")
+            father_qualification = st.radio("Titulación del padre", 
+                                          options=["Basic_or_Secondary", "Other_or_Unknown", 
+                                                  "Postgraduate"],
+                                          horizontal=True)
+            
+            father_occupation = st.selectbox("Ocupación del padre", options=[
+                "Administrative/Clerical", "Professionals",
+                "Skilled Manual Workers", "Special Cases",
+                "Technicians/Associate Professionals"
+            ])
+    
+        # Nacionalidad
+        nationality = st.selectbox("Nacionalidad", options=[
+            "Colombian", "Cuban", "Dutch", "English", "German",
+            "Italian", "Lithuanian", "Moldovan", "Mozambican",
+            "Portuguese", "Romanian", "Santomean", "Turkish"
+        ])
+    
+    submitted = st.form_submit_button("Predecir Riesgo de Deserción")
+
+# Cuando se envía el formulario
+if submitted:
+    # Crear un diccionario con todas las columnas esperadas inicializadas a 0
+    input_data = {col: 0 for col in columnas_esperadas}
+    
+    # Actualizar los valores numéricos directos
+    input_data.update({
+        # Información personal
+        'Age at enrollment': age,
+        'Gender': gender,
+        'Displaced': int(displaced),
+        'Debtor': int(debtor),
+        'Tuition fees up to date': int(tuition_up_to_date),
+        'Scholarship holder': int(scholarship),
+        
+        # Datos académicos
+        'Application order': application_order,
+        'Daytime/evening attendance': daytime_attendance,
+        'Previous qualification (grade)': prev_qualification_grade,
+        'Admission grade': admission_grade,
+        
+        # Primer semestre
+        'Curricular units 1st sem (evaluations)': units_1sem_eval,
+        'Curricular units 1st sem (without evaluations)': units_1sem_noeval,
+        
+        # Segundo semestre
+        'Curricular units 2nd sem (credited)': units_2sem_credited,
+        'Curricular units 2nd sem (enrolled)': units_2sem_enrolled,
+        'Curricular units 2nd sem (evaluations)': units_2sem_eval,
+        'Curricular units 2nd sem (approved)': units_2sem_approved,
+        'Curricular units 2nd sem (grade)': units_2sem_grade,
+        'Curricular units 2nd sem (without evaluations)': units_2sem_noeval,
+        
+        # Información económica
+        'Unemployment rate': unemployment,
+        'Inflation rate': inflation,
+        'GDP': gdp,
+    })
+    
+    # Activar variables categóricas usando los nombres exactos del modelo
+    # Estado civil
+    marital_col = f'Marital status_{marital_status}'
+    if marital_col in columnas_esperadas:
+        input_data[marital_col] = 1
+    
+    # Modo de aplicación - usar nombres exactos del modelo
+    app_mode_map = {
+        "Admisión Regular": "Admisión Regular",
+        "Admisión Especial": "Admisión Especial", 
+        "Admisión por Ordenanza": "Admisión por Ordenanza",
+        "Cambios/Transferencias": "Cambios/Transferencias",
+        "Estudiantes Internacionales": "Estudiantes Internacionales",
+        "Mayores de 23 años": "Mayores de 23 años"
+    }
+    app_mode_col = f'Application mode_{app_mode_map[application_mode]}'
+    if app_mode_col in columnas_esperadas:
+        input_data[app_mode_col] = 1
+    
+    # Curso
+    course_col = f'Course_{course}'
+    if course_col in columnas_esperadas:
+        input_data[course_col] = 1
+    
+    # Titulación previa
+    prev_qual_col = f'Previous qualification_{prev_qualification}'
+    if prev_qual_col in columnas_esperadas:
+        input_data[prev_qual_col] = 1
+    
+    # Nacionalidad
+    nationality_col = f'Nacionality_{nationality}'
+    if nationality_col in columnas_esperadas:
+        input_data[nationality_col] = 1
+    
+    # Titulación de la madre
+    mother_qual_col = f"Mother's qualification_{mother_qualification}"
+    if mother_qual_col in columnas_esperadas:
+        input_data[mother_qual_col] = 1
+    
+    # Ocupación de la madre - corregir nombres con espacios
+    mother_occ_formatted = mother_occupation.replace(" ", "_").replace("/", "/")
+    mother_occ_col = f"Mother's occupation_{mother_occ_formatted}"
+    if mother_occ_col in columnas_esperadas:
+        input_data[mother_occ_col] = 1
+    
+    # Titulación del padre
+    father_qual_col = f"Father's qualification_{father_qualification}"
+    if father_qual_col in columnas_esperadas:
+        input_data[father_qual_col] = 1
+    
+    # Ocupación del padre - corregir nombres con espacios
+    father_occ_formatted = father_occupation.replace(" ", "_").replace("/", "/")
+    father_occ_col = f"Father's occupation_{father_occ_formatted}"
+    if father_occ_col in columnas_esperadas:
+        input_data[father_occ_col] = 1
+    
+    # Convertir a DataFrame manteniendo el orden exacto de las columnas esperadas
+    input_df = pd.DataFrame([input_data])[columnas_esperadas]
+    
+    # Hacer la predicción
+    try:
+        prediction_proba = pipeline.predict_proba(input_df)[0][1]  # Probabilidad de deserción
+        prediction_percent = round(prediction_proba * 100, 2)
+        
+        # Mostrar resultados
+        st.subheader("Resultado de la Predicción")
+        
+        # Barra de progreso y métrica
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Probabilidad de Deserción", f"{prediction_percent}%")
+        with col2:
+            st.progress(prediction_proba)
+        
+        # Interpretación
+        if prediction_proba > 0.7:
+            st.error("🚨 Alto riesgo de deserción. Se recomienda intervención inmediata.")
+        elif prediction_proba > 0.4:
+            st.warning("⚠️ Riesgo moderado de deserción. Se sugiere monitoreo cercano.")
+        else:
+            st.success("✅ Bajo riesgo de deserción.")
+        
+        # Mostrar información adicional
+        with st.expander("Ver detalles de la predicción"):
+            st.write("**Factores de riesgo identificados:**")
+            
+            risk_factors = []
+            if prediction_proba > 0.5:
+                if units_2sem_grade < 10:
+                    risk_factors.append("- Nota promedio baja en segundo semestre")
+                if units_2sem_approved < units_2sem_eval * 0.7:
+                    risk_factors.append("- Baja tasa de aprobación en segundo semestre")
+                if not tuition_up_to_date:
+                    risk_factors.append("- Matrícula no está al día")
+                if debtor:
+                    risk_factors.append("- Estudiante con deudas")
+                if unemployment > 12:
+                    risk_factors.append("- Alta tasa de desempleo en el contexto")
+            
+            if risk_factors:
+                for factor in risk_factors:
+                    st.write(factor)
+            else:
+                st.write("No se identificaron factores de riesgo significativos.")
+        
+        # Mostrar los datos técnicos (opcional)
+        with st.expander("Ver datos técnicos enviados al modelo"):
+            # Mostrar solo las columnas con valores no cero para mayor claridad
+            non_zero_data = {k: v for k, v in input_data.items() if v != 0}
+            st.json(non_zero_data)
+            
+    except Exception as e:
+        st.error(f"Error al hacer la predicción: {str(e)}")
+        st.write("Columnas esperadas por el modelo:")
+        st.write(columnas_esperadas)
+        st.write("Columnas enviadas:")
+        st.write(list(input_df.columns))
+
+# Información adicional en el sidebar
+st.sidebar.markdown("""
+### Instrucciones:
+1. Complete todas las pestañas del formulario.
+2. Revise que los datos sean correctos.
+3. Haga clic en **Predecir Riesgo de Deserción**.
+4. Interprete los resultados según el nivel de riesgo.
+
+### Notas:
+- Los campos booleanos se convierten automáticamente (0=False, 1=True)
+- Para variables categóricas, seleccione solo una opción
+- El modelo fue entrenado con datos balanceados usando SMOTE
+- Utiliza un pipeline con XGBoost optimizado mediante búsqueda bayesiana
+
+### Métricas del modelo:
+- F1-Score: ~0.91
+- Validación cruzada de 10 pliegues
+- Optimización de hiperparámetros con BayesSearchCV
+""")
+
+# Footer
+st.markdown("---")
+st.markdown("*Sistema desarrollado para predecir la deserción universitaria usando técnicas de Machine Learning*")
