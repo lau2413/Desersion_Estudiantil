@@ -16,17 +16,55 @@ Complete el formulario con la información del estudiante para predecir el riesg
 @st.cache_resource
 def load_model():
     try:
+        # Intentar cargar el pipeline
         pipeline = joblib.load('data/pipeline_final_desercion.pkl')
+        
+        # Verificar que el pipeline esté entrenado
+        if not hasattr(pipeline, 'classes_') and hasattr(pipeline, 'named_steps'):
+            # Si es un pipeline, verificar el último paso
+            last_step = list(pipeline.named_steps.values())[-1]
+            if not hasattr(last_step, 'classes_'):
+                st.error("El modelo no está entrenado correctamente.")
+                return None, None
+        
+        # Cargar columnas esperadas
         columnas = joblib.load('data/columnas_esperadas.pkl')
+        
+        st.success(f"Modelo cargado exitosamente. Tipo: {type(pipeline)}")
         return pipeline, columnas
+        
+    except FileNotFoundError as e:
+        st.error(f"Archivo no encontrado: {str(e)}")
+        st.error("Asegúrate de que los archivos 'pipeline_final_desercion.pkl' y 'columnas_esperadas.pkl' estén en la carpeta 'data/'")
+        return None, None
     except Exception as e:
         st.error(f"Error cargando el modelo: {str(e)}")
+        st.error(f"Tipo de error: {type(e).__name__}")
         return None, None
+
+# Mostrar información de depuración
+st.sidebar.markdown("### Estado del Sistema")
 
 pipeline, columnas_esperadas = load_model()
 
 if pipeline is None:
+    st.error("No se pudo cargar el modelo. Verifica los archivos en la carpeta 'data/'.")
     st.stop()
+else:
+    st.sidebar.success("✅ Modelo cargado")
+    
+    # Información adicional del modelo
+    with st.sidebar.expander("Información del Modelo"):
+        st.write(f"Tipo de pipeline: {type(pipeline)}")
+        if hasattr(pipeline, 'named_steps'):
+            st.write("Pasos del pipeline:")
+            for name, step in pipeline.named_steps.items():
+                st.write(f"- {name}: {type(step).__name__}")
+        
+        if columnas_esperadas is not None:
+            st.write(f"Número de características: {len(columnas_esperadas)}")
+            with st.expander("Ver todas las columnas"):
+                st.write(columnas_esperadas)
 
 # Crear formulario para la entrada de datos
 with st.form("student_form"):
