@@ -28,6 +28,9 @@ pipeline, columnas_esperadas = load_model()
 if pipeline is None:
     st.stop()
 
+# Justo después de cargar el modelo
+st.write(f"Tipo de pipeline cargado: {type(pipeline)}")
+
 # Crear formulario para la entrada de datos
 with st.form("student_form"):
     # Dividir el formulario en pestañas para mejor organización
