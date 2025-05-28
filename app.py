@@ -48,8 +48,8 @@ else:
         
         if columnas_esperadas is not None:
             st.write(f"Número de características: {len(columnas_esperadas)}")
-            with st.expander("Ver todas las columnas"):
-                st.write(columnas_esperadas)
+            st.write("Columnas del modelo:")
+            st.write(columnas_esperadas)
 
 # Crear formulario para la entrada de datos
 with st.form("student_form"):
