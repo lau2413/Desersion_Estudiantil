@@ -16,8 +16,8 @@ Complete el formulario con la información del estudiante para predecir el riesg
 @st.cache_resource
 def load_model():
     try:
-        pipeline = joblib.load('pipeline_final_desercion.pkl')
-        columnas = joblib.load('columnas_esperadas.pkl')
+        pipeline = joblib.load('data/pipeline_final_desercion.pkl')
+        columnas = joblib.load('data/columnas_esperadas.pkl')
         return pipeline, columnas
     except Exception as e:
         st.error(f"Error cargando el modelo: {str(e)}")
@@ -60,16 +60,10 @@ with st.form("student_form"):
                                         format_func=lambda x: "Diurna" if x == 1 else "Nocturna",
                                         horizontal=True)
             
-            prev_qualification = st.selectbox("Titulación previa", options=[
-                "Secondary education", "Higher education - bachelor's degree",
-                "Higher education - degree", "Higher education - master's",
-                "Higher education - doctorate", "Frequency of higher education",
-                "12th year of schooling - not completed", "11th year of schooling - not completed",
-                "Other - 11th year of schooling", "10th year of schooling",
-                "10th year of schooling - not completed", "Basic education 3rd cycle",
-                "Basic education 2nd cycle", "Technological specialization course",
-                "Higher education - degree (1st cycle)", "Professional higher technical course",
-                "Higher education - master (2nd cycle)"
+            prev_qualification_grade = st.number_input("Nota de titulación previa", min_value=0.0, max_value=200.0, value=120.0)
+            
+            prev_qualification = st.selectbox("Tipo de titulación previa", options=[
+                "Secondary Education", "Higher Education", "Technical Education", "Other"
             ])
             
             admission_grade = st.number_input("Nota de admisión", min_value=0.0, max_value=200.0, value=120.0)
@@ -149,7 +143,7 @@ with st.form("student_form"):
                 "Technicians/Associate Professionals"
             ])
     
-        # Nacionalidad (movido dentro del tab4 pero fuera de las columnas)
+        # Nacionalidad
         nationality = st.selectbox("Nacionalidad", options=[
             "Colombian", "Cuban", "Dutch", "English", "German",
             "Italian", "Lithuanian", "Moldovan", "Mozambican",
@@ -158,33 +152,12 @@ with st.form("student_form"):
     
     submitted = st.form_submit_button("Predecir Riesgo de Deserción")
 
-# Función para crear el input correcto
-def create_input_data():
+# Cuando se envía el formulario
+if submitted:
     # Crear un diccionario con todas las columnas esperadas inicializadas a 0
     input_data = {col: 0 for col in columnas_esperadas}
     
-    # Mapeo de titulaciones previas a códigos numéricos
-    prev_qualification_map = {
-        "Secondary education": 1,
-        "Higher education - bachelor's degree": 2,
-        "Higher education - degree": 3,
-        "Higher education - master's": 4,
-        "Higher education - doctorate": 5,
-        "Frequency of higher education": 6,
-        "12th year of schooling - not completed": 9,
-        "11th year of schooling - not completed": 10,
-        "Other - 11th year of schooling": 12,
-        "10th year of schooling": 14,
-        "10th year of schooling - not completed": 15,
-        "Basic education 3rd cycle": 19,
-        "Basic education 2nd cycle": 38,
-        "Technological specialization course": 39,
-        "Higher education - degree (1st cycle)": 40,
-        "Professional higher technical course": 42,
-        "Higher education - master (2nd cycle)": 43
-    }
-    
-    # Actualizar los valores básicos
+    # Actualizar los valores numéricos directos
     input_data.update({
         # Información personal
         'Age at enrollment': age,
@@ -197,7 +170,7 @@ def create_input_data():
         # Datos académicos
         'Application order': application_order,
         'Daytime/evening attendance': daytime_attendance,
-        'Previous qualification (grade)': prev_qualification_map.get(prev_qualification, 1),
+        'Previous qualification (grade)': prev_qualification_grade,
         'Admission grade': admission_grade,
         
         # Primer semestre
@@ -218,96 +191,67 @@ def create_input_data():
         'GDP': gdp,
     })
     
-    # Variables categóricas - Estado civil
-    marital_status_cols = [f'Marital status_{status}' for status in ["Single", "Divorced", "FactoUnion", "Separated"]]
-    for col in marital_status_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f'Marital status_{marital_status}' else 0
+    # Activar variables categóricas usando los nombres exactos del modelo
+    # Estado civil
+    marital_col = f'Marital status_{marital_status}'
+    if marital_col in columnas_esperadas:
+        input_data[marital_col] = 1
     
-    # Variables categóricas - Modo de aplicación
-    application_mode_map = {
+    # Modo de aplicación - usar nombres exactos del modelo
+    app_mode_map = {
         "Admisión Regular": "Admisión Regular",
-        "Admisión Especial": "Admisión Especial",
+        "Admisión Especial": "Admisión Especial", 
         "Admisión por Ordenanza": "Admisión por Ordenanza",
         "Cambios/Transferencias": "Cambios/Transferencias",
         "Estudiantes Internacionales": "Estudiantes Internacionales",
         "Mayores de 23 años": "Mayores de 23 años"
     }
+    app_mode_col = f'Application mode_{app_mode_map[application_mode]}'
+    if app_mode_col in columnas_esperadas:
+        input_data[app_mode_col] = 1
     
-    for mode in application_mode_map.values():
-        col_name = f'Application mode_{mode}'
-        if col_name in columnas_esperadas:
-            input_data[col_name] = 1 if mode == application_mode else 0
+    # Curso
+    course_col = f'Course_{course}'
+    if course_col in columnas_esperadas:
+        input_data[course_col] = 1
     
-    # Variables categóricas - Curso
-    course_cols = [f'Course_{c}' for c in ["Agricultural & Environmental Sciences", "Arts & Design",
-                                           "Business & Management", "Communication & Media",
-                                           "Education", "Engineering & Technology",
-                                           "Health Sciences", "Social Sciences"]]
-    for col in course_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f'Course_{course}' else 0
+    # Titulación previa
+    prev_qual_col = f'Previous qualification_{prev_qualification}'
+    if prev_qual_col in columnas_esperadas:
+        input_data[prev_qual_col] = 1
     
-    # Variables categóricas - Titulación de la madre
-    mother_qual_cols = [f"Mother's qualification_{qual}" for qual in ["Basic_or_Secondary", "Other_or_Unknown", 
-                                                                     "Postgraduate", "Technical_Education"]]
-    for col in mother_qual_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f"Mother's qualification_{mother_qualification}" else 0
+    # Nacionalidad
+    nationality_col = f'Nacionality_{nationality}'
+    if nationality_col in columnas_esperadas:
+        input_data[nationality_col] = 1
     
-    # Variables categóricas - Ocupación de la madre
-    mother_occ_cols = [f"Mother's occupation_{occ.replace(' ', '_')}" for occ in [
-        "Administrative/Clerical", "Skilled Manual Workers", "Special Cases", 
-        "Technicians/Associate Professionals", "Unskilled Workers"]]
-    for col in mother_occ_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f"Mother's occupation_{mother_occupation.replace(' ', '_')}" else 0
+    # Titulación de la madre
+    mother_qual_col = f"Mother's qualification_{mother_qualification}"
+    if mother_qual_col in columnas_esperadas:
+        input_data[mother_qual_col] = 1
     
-    # Variables categóricas - Titulación del padre
-    father_qual_cols = [f"Father's qualification_{qual}" for qual in ["Basic_or_Secondary", "Other_or_Unknown", "Postgraduate"]]
-    for col in father_qual_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f"Father's qualification_{father_qualification}" else 0
+    # Ocupación de la madre - corregir nombres con espacios
+    mother_occ_formatted = mother_occupation.replace(" ", "_").replace("/", "/")
+    mother_occ_col = f"Mother's occupation_{mother_occ_formatted}"
+    if mother_occ_col in columnas_esperadas:
+        input_data[mother_occ_col] = 1
     
-    # Variables categóricas - Ocupación del padre
-    father_occ_cols = [f"Father's occupation_{occ.replace(' ', '_')}" for occ in [
-        "Administrative/Clerical", "Professionals", "Skilled Manual Workers", 
-        "Special Cases", "Technicians/Associate Professionals"]]
-    for col in father_occ_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f"Father's occupation_{father_occupation.replace(' ', '_')}" else 0
+    # Titulación del padre
+    father_qual_col = f"Father's qualification_{father_qualification}"
+    if father_qual_col in columnas_esperadas:
+        input_data[father_qual_col] = 1
     
-    # Variables categóricas - Nacionalidad
-    nationality_cols = [f'Nacionality_{nat}' for nat in ["Colombian", "Cuban", "Dutch", "English", "German",
-                                                        "Italian", "Lithuanian", "Moldovan", "Mozambican",
-                                                        "Portuguese", "Romanian", "Santomean", "Turkish"]]
-    for col in nationality_cols:
-        if col in columnas_esperadas:
-            input_data[col] = 1 if col == f'Nacionality_{nationality}' else 0
+    # Ocupación del padre - corregir nombres con espacios
+    father_occ_formatted = father_occupation.replace(" ", "_").replace("/", "/")
+    father_occ_col = f"Father's occupation_{father_occ_formatted}"
+    if father_occ_col in columnas_esperadas:
+        input_data[father_occ_col] = 1
     
-    return input_data
-
-# Cuando se envía el formulario
-if submitted:
+    # Convertir a DataFrame manteniendo el orden exacto de las columnas esperadas
+    input_df = pd.DataFrame([input_data])[columnas_esperadas]
+    
+    # Hacer la predicción
     try:
-        # Crear los datos de entrada
-        input_data = create_input_data()
-        
-        # Convertir a DataFrame con el orden correcto de columnas
-        input_df = pd.DataFrame([input_data])
-        
-        # Asegurar que todas las columnas esperadas estén presentes
-        for col in columnas_esperadas:
-            if col not in input_df.columns:
-                input_df[col] = 0
-        
-        # Reordenar columnas según el orden esperado
-        input_df = input_df[columnas_esperadas]
-        
-        # Convertir tipos de datos
-        input_df = input_df.astype(float)
-        
-        # Hacer la predicción
         prediction_proba = pipeline.predict_proba(input_df)[0][1]  # Probabilidad de deserción
         prediction_percent = round(prediction_proba * 100, 2)
         
@@ -329,19 +273,41 @@ if submitted:
         else:
             st.success("✅ Bajo riesgo de deserción.")
         
-        # Mostrar los datos ingresados (opcional)
+        # Mostrar información adicional
+        with st.expander("Ver detalles de la predicción"):
+            st.write("**Factores de riesgo identificados:**")
+            
+            risk_factors = []
+            if prediction_proba > 0.5:
+                if units_2sem_grade < 10:
+                    risk_factors.append("- Nota promedio baja en segundo semestre")
+                if units_2sem_approved < units_2sem_eval * 0.7:
+                    risk_factors.append("- Baja tasa de aprobación en segundo semestre")
+                if not tuition_up_to_date:
+                    risk_factors.append("- Matrícula no está al día")
+                if debtor:
+                    risk_factors.append("- Estudiante con deudas")
+                if unemployment > 12:
+                    risk_factors.append("- Alta tasa de desempleo en el contexto")
+            
+            if risk_factors:
+                for factor in risk_factors:
+                    st.write(factor)
+            else:
+                st.write("No se identificaron factores de riesgo significativos.")
+        
+        # Mostrar los datos técnicos (opcional)
         with st.expander("Ver datos técnicos enviados al modelo"):
-            st.dataframe(input_df.T.rename(columns={0: "Valor"}))
+            # Mostrar solo las columnas con valores no cero para mayor claridad
+            non_zero_data = {k: v for k, v in input_data.items() if v != 0}
+            st.json(non_zero_data)
             
     except Exception as e:
         st.error(f"Error al hacer la predicción: {str(e)}")
-        st.error(f"Tipo de error: {type(e).__name__}")
-        
-        # Información adicional de debug
-        st.write("**Información de debug:**")
-        st.write(f"Columnas esperadas: {len(columnas_esperadas) if columnas_esperadas else 'No cargadas'}")
-        if 'input_df' in locals():
-            st.write(f"Columnas en input_df: {len(input_df.columns)}")
+        st.write("Columnas esperadas por el modelo:")
+        st.write(columnas_esperadas)
+        st.write("Columnas enviadas:")
+        st.write(list(input_df.columns))
 
 # Información adicional en el sidebar
 st.sidebar.markdown("""
@@ -354,4 +320,15 @@ st.sidebar.markdown("""
 ### Notas:
 - Los campos booleanos se convierten automáticamente (0=False, 1=True)
 - Para variables categóricas, seleccione solo una opción
+- El modelo fue entrenado con datos balanceados usando SMOTE
+- Utiliza un pipeline con XGBoost optimizado mediante búsqueda bayesiana
+
+### Métricas del modelo:
+- F1-Score: ~0.91
+- Validación cruzada de 10 pliegues
+- Optimización de hiperparámetros con BayesSearchCV
 """)
+
+# Footer
+st.markdown("---")
+st.markdown("*Sistema desarrollado para predecir la deserción universitaria usando técnicas de Machine Learning*")
